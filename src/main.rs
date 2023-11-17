@@ -5,7 +5,7 @@ async fn main() -> anyhow::Result<()> {
     let zilliqa = Zilliqa::new("http://127.0.0.1:5555").unwrap();
     let balance = zilliqa
         .blockchain
-        .get_balance("0x381f4008505e940ad7681ec3468a719060caf796")
+        .get_balance("zil18q05qzzst62q44mgrmp5dzn3jpsv4aukxredu2")
         .await;
 
     println!("{:?}", balance);
