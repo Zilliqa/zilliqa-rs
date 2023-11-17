@@ -13,6 +13,13 @@ pub fn is_byte_string(str: &str, len: usize) -> bool {
     regex.is_match(&str)
 }
 
+pub fn is_bech32(raw: &str) -> bool {
+    let regex = regex::Regex::new("^zil1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{38}$")
+        .expect("Failed to create the regex for `is_bech32`");
+
+    regex.is_match(&raw)
+}
+
 #[cfg(test)]
 mod is_byte_string_tests {
     use super::is_byte_string;
@@ -82,5 +89,23 @@ mod is_private_key_tests {
         println!("LEN: {}", str.len());
         assert_gt!(str.len(), 64);
         assert_eq!(is_private_key(str), false);
+    }
+}
+
+#[cfg(test)]
+mod is_bech32_tests {
+    use crate::util::validation::is_bech32;
+
+    #[test]
+    fn is_bech32_should_return_true_for_valid_one() {
+        assert!(is_bech32("zil18q05qzzst62q44mgrmp5dzn3jpsv4aukxredu2"))
+    }
+
+    #[test]
+    fn is_bech32_should_return_false_for_invalid_ones() {
+        assert!(!is_bech32("liz18q05qzzst62q44mgrmp5dzn3jpsv4aukxredu2"));
+        assert!(!is_bech32(
+            "zil18q05qzzst62q44mgrmp5dzn3jpsv4aukxredu2ssaas"
+        ));
     }
 }

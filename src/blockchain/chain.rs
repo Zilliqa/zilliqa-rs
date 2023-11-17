@@ -1,6 +1,8 @@
 use jsonrpsee::rpc_params;
 
-use crate::core::HTTPProvider;
+use crate::{core::HTTPProvider, crypto::bech32::from_bech32_address, util::validation::is_bech32};
+
+use super::error::BlockchainError;
 
 pub struct Blockchain {
     pub provider: HTTPProvider,
@@ -11,7 +13,16 @@ impl Blockchain {
         Self { provider }
     }
 
-    pub async fn get_balance(&self, address: &str) -> Result<String, jsonrpsee::core::Error> {
-        self.provider.send("GetBalance", rpc_params![address]).await
+    pub async fn get_balance(&self, address: &str) -> Result<String, BlockchainError> {
+        let address = if is_bech32(address) {
+            from_bech32_address(&address)?
+        } else {
+            address.to_string()
+        };
+
+        Ok(self
+            .provider
+            .send("GetBalance", rpc_params![address])
+            .await?)
     }
 }

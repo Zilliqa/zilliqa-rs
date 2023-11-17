@@ -16,4 +16,7 @@ pub enum CryptoError {
 
     #[error(transparent)]
     Secp256k1Error(#[from] secp256k1::Error),
+
+    #[error(transparent)]
+    Bech32Error(#[from] bech32::Error),
 }
