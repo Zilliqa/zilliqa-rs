@@ -1,4 +1,4 @@
-use std::ops::BitAnd;
+use std::{net::AddrParseError, ops::BitAnd};
 
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
@@ -46,11 +46,12 @@ pub fn get_address_from_public_key(public_key: &str) -> Result<String, CryptoErr
 }
 
 pub fn to_checksum_address(address: &str) -> Result<String, CryptoError> {
-    if is_address(address) == false {
+    let address = address.replace("0x", "");
+    if is_address(&address) == false {
         return Err(CryptoError::InvalidAddress(address.to_string()));
     }
 
-    let hash = sha256::digest(hex::decode(address)?);
+    let hash = sha256::digest(hex::decode(&address)?);
     let v = primitive_types::U256::from_big_endian(&hex::decode(&hash)?);
     let ret = address
         .chars()
@@ -77,10 +78,15 @@ pub fn to_checksum_address(address: &str) -> Result<String, CryptoError> {
     Ok(format!("0x{}", ret))
 }
 
+pub fn is_valid_checksum_address(address: &str) -> Result<bool, CryptoError> {
+    Ok(to_checksum_address(&address)? == address)
+}
+
 #[cfg(test)]
 mod tests {
     use crate::crypto::util::{
-        get_address_from_public_key, get_pub_key_from_private_key, to_checksum_address,
+        get_address_from_public_key, get_pub_key_from_private_key, is_valid_checksum_address,
+        to_checksum_address,
     };
 
     #[test]
@@ -100,6 +106,20 @@ mod tests {
         let checksum = "0x11223344556677889900AabbccdDeefF11223344";
 
         assert_eq!(checksum, to_checksum_address(address).unwrap())
+    }
+
+    #[test]
+    fn is_valid_checksum_address_should_return_true_if_address_is_correctly_checksumed() {
+        let checksum = "0x11223344556677889900AabbccdDeefF11223344";
+
+        assert!(is_valid_checksum_address(checksum).unwrap())
+    }
+
+    #[test]
+    fn is_valid_checksum_address_should_return_false_if_address_is_not_correctly_checksumed() {
+        let checksum = "0x11223344556677889900AabbccdDEEfF11223344";
+
+        assert!(!is_valid_checksum_address(checksum).unwrap())
     }
 
     #[test]
