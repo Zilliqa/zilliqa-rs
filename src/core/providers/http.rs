@@ -3,7 +3,7 @@ use jsonrpsee::{
     http_client::{HttpClient, HttpClientBuilder},
 };
 
-use crate::core::error::CoreError;
+use crate::core::{error::CoreError, net::RPCMethod};
 
 pub struct HTTPProvider {
     client: HttpClient,
@@ -18,9 +18,9 @@ impl HTTPProvider {
 
     pub async fn send(
         &self,
-        method: &str,
+        method: RPCMethod,
         params: ArrayParams,
     ) -> Result<String, jsonrpsee::core::Error> {
-        self.client.request(method, params).await
+        self.client.request(&method.to_string(), params).await
     }
 }

@@ -1,6 +1,9 @@
 use jsonrpsee::rpc_params;
 
-use crate::{core::HTTPProvider, crypto::bech32::from_bech32_address, util::validation::is_bech32};
+use crate::{
+    core::HTTPProvider, core::RPCMethod, crypto::bech32::from_bech32_address,
+    util::validation::is_bech32,
+};
 
 use super::error::BlockchainError;
 
@@ -22,7 +25,7 @@ impl Blockchain {
 
         Ok(self
             .provider
-            .send("GetBalance", rpc_params![address])
+            .send(RPCMethod::GetBalance, rpc_params![address])
             .await?)
     }
 }
