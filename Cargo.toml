@@ -12,6 +12,7 @@ name = "zilliqa-rs"
 
 [dependencies]
 anyhow = "1.0.75"
+bech32 = "0.9.1"
 crypto-bigint = "0.5.4"
 hex = "0.4.3"
 jsonrpc = "0.16.0"
