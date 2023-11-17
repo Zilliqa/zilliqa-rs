@@ -1,0 +1,25 @@
+[package]
+name = "zilliqa-rs"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+path = "src/main.rs"
+name = "zilliqa-rs"
+
+[dependencies]
+anyhow = "1.0.75"
+crypto-bigint = "0.5.4"
+hex = "0.4.3"
+jsonrpc = "0.16.0"
+primitive-types = "0.12.2"
+regex = "1.10.2"
+secp256k1 = "0.28.0"
+sha256 = "1.4.0"
+thiserror = "1.0.50"
+
+[dev-dependencies]
+claim = "0.5"
