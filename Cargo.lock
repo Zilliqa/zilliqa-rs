@@ -976,6 +976,7 @@ version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2acea373acb8c21ecb5a23741452acd2593ed44ee3d343e72baaa143bc89d0d5"
 dependencies = [
+ "rand",
  "secp256k1-sys",
 ]
 
@@ -1534,6 +1535,7 @@ dependencies = [
  "jsonrpc",
  "jsonrpsee",
  "primitive-types",
+ "rand",
  "regex",
  "secp256k1",
  "serde_json",

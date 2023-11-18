@@ -1,4 +1,4 @@
-use std::{net::AddrParseError, ops::BitAnd};
+use std::ops::BitAnd;
 
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
@@ -11,7 +11,7 @@ use super::error::CryptoError;
 //   const { result } = keyPair.validate();
 //   return result;
 // };
-pub fn verify_private_key(private_key: &str) -> bool {
+pub fn verify_private_key(_private_key: &str) -> bool {
     // TODO: Implement this function
     true
 }
@@ -82,12 +82,22 @@ pub fn is_valid_checksum_address(address: &str) -> Result<bool, CryptoError> {
     Ok(to_checksum_address(&address)? == address)
 }
 
+pub fn generate_private_key() -> String {
+    let secret_key = SecretKey::new(&mut rand::thread_rng());
+    format!("{}", secret_key.display_secret())
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::crypto::util::{
-        get_address_from_public_key, get_pub_key_from_private_key, is_valid_checksum_address,
-        to_checksum_address,
+    use crate::{
+        crypto::util::{
+            get_address_from_public_key, get_pub_key_from_private_key, is_valid_checksum_address,
+            to_checksum_address,
+        },
+        util::validation::is_private_key,
     };
+
+    use super::generate_private_key;
 
     #[test]
     fn get_pub_key_from_private_key_should_return_correct_public_key_for_a_valid_private_key() {
@@ -131,5 +141,11 @@ mod tests {
             get_address_from_public_key(pub_key).unwrap(),
             expected_address
         )
+    }
+
+    #[test]
+    fn generate_private_key_should_generate_a_valid_private_key() {
+        let private_key = generate_private_key();
+        assert!(is_private_key(&private_key))
     }
 }
