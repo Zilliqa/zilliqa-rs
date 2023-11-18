@@ -1,4 +1,8 @@
 pub mod error;
+pub mod transaction;
+pub mod wallet;
+
+pub use transaction::Transaction;
 
 use crate::crypto::{
     bech32::to_bech32_address,
@@ -7,7 +11,7 @@ use crate::crypto::{
 
 use self::error::AccountError;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Account {
     pub private_key: String,
     pub public_key: String,
