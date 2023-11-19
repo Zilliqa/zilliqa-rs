@@ -4,4 +4,4 @@ pub mod transaction;
 pub mod wallet;
 
 pub use account::Account;
-pub use transaction::Transaction;
+pub use transaction::*;
