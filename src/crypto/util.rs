@@ -1,6 +1,7 @@
 use std::ops::BitAnd;
 
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
+use sha2::Digest;
 
 use crate::util::validation::{is_address, is_private_key};
 
@@ -42,7 +43,9 @@ pub fn get_pub_key_from_private_key(private_key: &str) -> Result<String, CryptoE
 pub fn get_address_from_public_key(public_key: &str) -> Result<String, CryptoError> {
     let normalized = public_key.to_lowercase().replace("0x", "");
 
-    to_checksum_address(&sha256::digest(hex::decode(normalized)?)[24..])
+    let mut hasher = sha2::Sha256::new();
+    hasher.update(hex::decode(normalized)?);
+    to_checksum_address(&hex::encode(hasher.finalize())[24..])
 }
 
 pub fn to_checksum_address(address: &str) -> Result<String, CryptoError> {
@@ -51,8 +54,9 @@ pub fn to_checksum_address(address: &str) -> Result<String, CryptoError> {
         return Err(CryptoError::InvalidAddress(address.to_string()));
     }
 
-    let hash = sha256::digest(hex::decode(&address)?);
-    let v = primitive_types::U256::from_big_endian(&hex::decode(&hash)?);
+    let mut hasher = sha2::Sha256::new();
+    hasher.update(hex::decode(&address)?);
+    let v = primitive_types::U256::from_big_endian(&hasher.finalize());
     let ret = address
         .chars()
         .enumerate()
