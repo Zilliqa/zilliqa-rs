@@ -2,18 +2,6 @@ use std::fmt::Display;
 
 use serde::Serializer;
 
-// TODO: DRY
-pub struct TransactionRequest {
-    pub nonce: Option<u64>,
-    pub to_addr: String,
-    pub amount: Option<u128>,
-    pub pub_key: Option<String>,
-    pub gas_price: u128,
-    pub gas_limit: u64,
-    pub code: Option<String>,
-    pub data: Option<String>,
-}
-
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
@@ -32,6 +20,89 @@ pub struct Transaction {
     pub signature: Option<String>,
 }
 
+impl Default for Transaction {
+    fn default() -> Self {
+        Self {
+            version: Default::default(),
+            nonce: Default::default(),
+            to_addr: Default::default(),
+            amount: Default::default(),
+            pub_key: Default::default(),
+            gas_price: Default::default(),
+            gas_limit: Default::default(),
+            code: Default::default(),
+            data: Default::default(),
+            signature: Default::default(),
+        }
+    }
+}
+
 pub fn to_str<S: Serializer, T: Display>(data: T, serializer: S) -> Result<S::Ok, S::Error> {
     serializer.serialize_str(&data.to_string())
+}
+
+pub struct TransactionBuilder {
+    inner_transaction: Transaction,
+}
+
+impl TransactionBuilder {
+    pub fn new() -> Self {
+        TransactionBuilder {
+            inner_transaction: Transaction::default(),
+        }
+    }
+
+    pub fn version(mut self, version: u32) -> Self {
+        self.inner_transaction.version = version;
+        self
+    }
+
+    pub fn nonce(mut self, nonce: u64) -> Self {
+        self.inner_transaction.nonce = nonce;
+        self
+    }
+
+    pub fn to_address(mut self, to_addr: &str) -> Self {
+        self.inner_transaction.to_addr = to_addr.to_string();
+        self
+    }
+
+    pub fn amount(mut self, amount: u128) -> Self {
+        self.inner_transaction.amount = amount;
+        self
+    }
+
+    pub fn gas_price(mut self, gas_price: u128) -> Self {
+        self.inner_transaction.gas_price = gas_price;
+        self
+    }
+
+    pub fn gas_limit(mut self, gas_limit: u64) -> Self {
+        self.inner_transaction.gas_limit = gas_limit;
+        self
+    }
+
+    pub fn pub_key(mut self, pub_key: String) -> Self {
+        self.inner_transaction.pub_key = Some(pub_key);
+        self
+    }
+
+    pub fn data(mut self, data: String) -> Self {
+        self.inner_transaction.data = data;
+        self
+    }
+
+    pub fn code(mut self, code: String) -> Self {
+        self.inner_transaction.code = code;
+        self
+    }
+
+    pub fn signature(mut self, signature: String) -> Self {
+        self.inner_transaction.signature = Some(signature);
+        self
+    }
+
+    pub fn build(self) -> Transaction {
+        self.inner_transaction
+    }
 }
