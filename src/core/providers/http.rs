@@ -2,6 +2,7 @@ use jsonrpsee::{
     core::{client::ClientT, params::ArrayParams},
     http_client::{HttpClient, HttpClientBuilder},
 };
+use serde::de::DeserializeOwned;
 
 use crate::core::{error::CoreError, net::RPCMethod};
 
@@ -16,11 +17,14 @@ impl HTTPProvider {
         })
     }
 
-    pub async fn send(
+    pub async fn send<R>(
         &self,
         method: RPCMethod,
         params: ArrayParams,
-    ) -> Result<String, jsonrpsee::core::Error> {
+    ) -> Result<R, jsonrpsee::core::Error>
+    where
+        R: DeserializeOwned,
+    {
         self.client.request(&method.to_string(), params).await
     }
 }

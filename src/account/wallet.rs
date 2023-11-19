@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::crypto::util::generate_private_key;
+use crate::crypto::util::{generate_private_key, get_address_from_public_key};
 
 use super::{error::AccountError, Account, Transaction};
 
@@ -77,12 +77,19 @@ impl Wallet {
         self.default_account.as_ref()
     }
 
-    pub fn sign(_tx: Transaction) {
-        todo!()
-    }
+    pub fn sign(&self, tx: Transaction) -> Result<Transaction, AccountError> {
+        let account = if let Some(pub_key) = &tx.pub_key {
+            let address = get_address_from_public_key(&pub_key)?;
+            self.accounts
+                .get(&address)
+                .ok_or(AccountError::AccountDoesNotExist(address))
+        } else if let Some(account) = &self.default_account {
+            Ok(account)
+        } else {
+            Err(AccountError::NeitherPubKeyNorDefaultAccountProvided)
+        }?;
 
-    pub fn sign_with(_tx: Transaction, _address: String) {
-        todo!()
+        Ok(account.sign_transaction(tx))
     }
 }
 
