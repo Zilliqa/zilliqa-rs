@@ -19,7 +19,7 @@ impl HTTPProvider {
 
     pub async fn send<R>(
         &self,
-        method: RPCMethod,
+        method: String,
         params: ArrayParams,
     ) -> Result<R, jsonrpsee::core::Error>
     where

@@ -89,7 +89,7 @@ impl Wallet {
         let response: BalanceResponse = self
             .provider
             .send(
-                crate::core::RPCMethod::GetBalance,
+                crate::core::RPCMethod::GetBalance.to_string(),
                 rpc_params![&account.address],
             )
             .await?;

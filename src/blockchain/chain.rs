@@ -38,7 +38,7 @@ impl Blockchain {
 
         Ok(self
             .provider
-            .send(RPCMethod::GetBalance, rpc_params![address])
+            .send(RPCMethod::GetBalance.to_string(), rpc_params![address])
             .await?)
     }
 
@@ -55,7 +55,7 @@ impl Blockchain {
         let tx = self.signer.borrow().sign_transaction(tx).await?;
         Ok(self
             .provider
-            .send(RPCMethod::CreateTransaction, rpc_params![tx])
+            .send(RPCMethod::CreateTransaction.to_string(), rpc_params![tx])
             .await?)
     }
 
@@ -65,7 +65,7 @@ impl Blockchain {
     ) -> Result<CreateTransactionResponse, BlockchainError> {
         Ok(self
             .provider
-            .send(RPCMethod::CreateTransaction, rpc_params![tx])
+            .send(RPCMethod::CreateTransaction.to_string(), rpc_params![tx])
             .await?)
     }
 }
