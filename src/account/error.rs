@@ -12,4 +12,7 @@ pub enum AccountError {
 
     #[error(transparent)]
     CryptoError(#[from] CryptoError),
+
+    #[error(transparent)]
+    JsonRpcError(#[from] jsonrpsee::core::Error),
 }

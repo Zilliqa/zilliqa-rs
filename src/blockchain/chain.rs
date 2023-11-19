@@ -10,31 +10,23 @@ use crate::{
     util::validation::is_bech32,
 };
 
-use super::error::BlockchainError;
+use super::{error::BlockchainError, BalanceResponse, CreateTransactionResponse};
 
 pub struct Blockchain {
     pub provider: Rc<HTTPProvider>,
     pub signer: Rc<RefCell<Wallet>>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct BalanceResponse {
-    nonce: u128,
-    balance: String,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct CreateTransactionResponse {
-    #[serde(rename = "TranID")]
-    tran_id: String,
-
-    #[serde(rename = "Info")]
-    info: String,
+    version: u32,
 }
 
 impl Blockchain {
-    pub fn new(provider: Rc<HTTPProvider>, signer: Rc<RefCell<Wallet>>) -> Self {
-        Self { provider, signer }
+    pub fn new(provider: Rc<HTTPProvider>, signer: Rc<RefCell<Wallet>>, chain_id: u16) -> Self {
+        let msg_version = 1u32;
+        let version = (chain_id as u32) << 16 | msg_version;
+        Self {
+            provider,
+            signer,
+            version,
+        }
     }
 
     pub async fn get_balance(&self, address: &str) -> Result<BalanceResponse, BlockchainError> {
@@ -52,9 +44,25 @@ impl Blockchain {
 
     pub async fn send_transaction(
         &self,
+        mut tx: Transaction,
+    ) -> Result<CreateTransactionResponse, BlockchainError> {
+        // Check if version is not set
+        if tx.version == u32::default() {
+            tx.version = self.version;
+        }
+
+        // Sign transaction, this will update pub_key, nonce, and signature.
+        let tx = self.signer.borrow().sign_transaction(tx).await?;
+        Ok(self
+            .provider
+            .send(RPCMethod::CreateTransaction, rpc_params![tx])
+            .await?)
+    }
+
+    pub async fn create_transaction(
+        &self,
         tx: Transaction,
     ) -> Result<CreateTransactionResponse, BlockchainError> {
-        let tx = self.signer.borrow().sign_transaction(tx)?;
         Ok(self
             .provider
             .send(RPCMethod::CreateTransaction, rpc_params![tx])
