@@ -1,14 +1,20 @@
+use std::{cell::RefCell, rc::Rc};
+
 use jsonrpsee::rpc_params;
 
 use crate::{
-    account::Transaction, core::HTTPProvider, core::RPCMethod, crypto::bech32::from_bech32_address,
+    account::{wallet::Wallet, Transaction},
+    core::HTTPProvider,
+    core::RPCMethod,
+    crypto::bech32::from_bech32_address,
     util::validation::is_bech32,
 };
 
 use super::error::BlockchainError;
 
 pub struct Blockchain {
-    pub provider: HTTPProvider,
+    pub provider: Rc<HTTPProvider>,
+    pub signer: Rc<RefCell<Wallet>>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -27,8 +33,8 @@ pub struct CreateTransactionResponse {
 }
 
 impl Blockchain {
-    pub fn new(provider: HTTPProvider) -> Self {
-        Self { provider }
+    pub fn new(provider: Rc<HTTPProvider>, signer: Rc<RefCell<Wallet>>) -> Self {
+        Self { provider, signer }
     }
 
     pub async fn get_balance(&self, address: &str) -> Result<BalanceResponse, BlockchainError> {
@@ -48,6 +54,7 @@ impl Blockchain {
         &self,
         tx: Transaction,
     ) -> Result<CreateTransactionResponse, BlockchainError> {
+        let tx = self.signer.borrow().sign_transaction(tx)?;
         Ok(self
             .provider
             .send(RPCMethod::CreateTransaction, rpc_params![tx])

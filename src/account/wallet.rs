@@ -77,7 +77,7 @@ impl Wallet {
         self.default_account.as_ref()
     }
 
-    pub fn sign(&self, tx: Transaction) -> Result<Transaction, AccountError> {
+    pub fn sign_transaction(&self, tx: Transaction) -> Result<Transaction, AccountError> {
         let account = if let Some(pub_key) = &tx.pub_key {
             let address = get_address_from_public_key(&pub_key)?;
             self.accounts

@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::crypto::error::CryptoError;
+use crate::{account::error::AccountError, crypto::error::CryptoError};
 
 #[derive(Debug, Error)]
 pub enum BlockchainError {
@@ -9,4 +9,7 @@ pub enum BlockchainError {
 
     #[error(transparent)]
     JsonRpcError(#[from] jsonrpsee::core::Error),
+
+    #[error(transparent)]
+    AccountError(#[from] AccountError),
 }
