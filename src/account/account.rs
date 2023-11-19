@@ -5,6 +5,7 @@ use prost::Message;
 use crate::{
     crypto::{
         bech32::to_bech32_address,
+        generate_private_key,
         schnorr::sign,
         util::{get_address_from_public_key, get_pub_key_from_private_key, normalize_private_key},
     },
@@ -34,6 +35,11 @@ impl Account {
             address,
             bech32_address,
         })
+    }
+
+    pub fn create_random() -> Result<Self, AccountError> {
+        let private_key = generate_private_key();
+        Self::new(&private_key)
     }
 
     pub fn sign(&self, message: &[u8]) -> Signature {
