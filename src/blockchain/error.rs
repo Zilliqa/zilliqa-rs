@@ -13,3 +13,5 @@ pub enum BlockchainError {
     #[error(transparent)]
     AccountError(#[from] AccountError),
 }
+
+pub type ChainResult<T> = Result<T, BlockchainError>;

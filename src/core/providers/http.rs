@@ -4,7 +4,7 @@ use jsonrpsee::{
 };
 use serde::de::DeserializeOwned;
 
-use crate::core::{error::CoreError, net::RPCMethod};
+use crate::core::error::CoreError;
 
 pub struct HTTPProvider {
     client: HttpClient,

@@ -56,7 +56,7 @@ impl ToString for RPCMethod {
             RPCMethod::GetNetworkId => "GetNetworkId",
             RPCMethod::GetBlockchainInfo => "GetBlockchainInfo",
             RPCMethod::GetShardingStructure => "GetShardingStructure",
-            RPCMethod::GetDSBlock => "GetDSBlock",
+            RPCMethod::GetDSBlock => "GetDsBlock",
             RPCMethod::GetLatestDSBlock => "GetLatestDSBlock",
             RPCMethod::GetNumDSBlocks => "GetNumDSBlocks",
             RPCMethod::GetDSBlockRate => "GetDSBlockRate",

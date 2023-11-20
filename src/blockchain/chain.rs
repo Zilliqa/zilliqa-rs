@@ -10,7 +10,10 @@ use crate::{
     util::validation::is_bech32,
 };
 
-use super::{error::BlockchainError, BalanceResponse, CreateTransactionResponse};
+use super::{
+    error::{BlockchainError, ChainResult},
+    BalanceResponse, BlockchainInfo, CreateTransactionResponse, DsBlock, ShardingStructure,
+};
 
 pub struct Blockchain {
     pub provider: Rc<HTTPProvider>,
@@ -29,7 +32,7 @@ impl Blockchain {
         }
     }
 
-    pub async fn get_balance(&self, address: &str) -> Result<BalanceResponse, BlockchainError> {
+    pub async fn get_balance(&self, address: &str) -> ChainResult<BalanceResponse> {
         let address = if is_bech32(address) {
             from_bech32_address(&address)?
         } else {
@@ -45,7 +48,7 @@ impl Blockchain {
     pub async fn send_transaction(
         &self,
         mut tx: Transaction,
-    ) -> Result<CreateTransactionResponse, BlockchainError> {
+    ) -> ChainResult<CreateTransactionResponse> {
         // Check if version is not set
         if tx.version == u32::default() {
             tx.version = self.version;
@@ -62,10 +65,34 @@ impl Blockchain {
     pub async fn create_transaction(
         &self,
         tx: Transaction,
-    ) -> Result<CreateTransactionResponse, BlockchainError> {
+    ) -> ChainResult<CreateTransactionResponse> {
         Ok(self
             .provider
             .send(RPCMethod::CreateTransaction.to_string(), rpc_params![tx])
+            .await?)
+    }
+
+    pub async fn get_blockchain_info(&self) -> Result<BlockchainInfo, BlockchainError> {
+        Ok(self
+            .provider
+            .send(RPCMethod::GetBlockchainInfo.to_string(), rpc_params![])
+            .await?)
+    }
+
+    pub async fn get_sharding_structure(&self) -> ChainResult<ShardingStructure> {
+        Ok(self
+            .provider
+            .send(RPCMethod::GetShardingStructure.to_string(), rpc_params![])
+            .await?)
+    }
+
+    pub async fn get_ds_block(&self, block_num: usize) -> ChainResult<DsBlock> {
+        Ok(self
+            .provider
+            .send(
+                RPCMethod::GetDSBlock.to_string(),
+                rpc_params![block_num.to_string()],
+            )
             .await?)
     }
 }
