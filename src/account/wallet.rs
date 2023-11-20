@@ -27,7 +27,7 @@ impl Wallet {
 
     pub fn new_with_accounts(accounts: Vec<Account>, provider: Rc<HTTPProvider>) -> Self {
         // TODO: Consider using refs here
-        let default_account = if accounts.len() > 0 {
+        let default_account = if !accounts.is_empty() {
             Some(accounts[0].clone())
         } else {
             None
@@ -99,7 +99,7 @@ impl Wallet {
 
     pub async fn sign_transaction(&self, mut tx: Transaction) -> Result<Transaction, AccountError> {
         let account = if let Some(pub_key) = &tx.pub_key {
-            let address = get_address_from_public_key(&pub_key)?;
+            let address = get_address_from_public_key(pub_key)?;
             self.accounts
                 .get(&address)
                 .ok_or(AccountError::AccountDoesNotExist(address))
@@ -111,7 +111,7 @@ impl Wallet {
 
         // TODO: Is it a sane condition?
         if tx.nonce == u64::default() {
-            tx.nonce = self.nonce(&account).await? + 1;
+            tx.nonce = self.nonce(account).await? + 1;
         }
 
         Ok(account.sign_transaction(tx))

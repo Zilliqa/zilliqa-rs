@@ -18,14 +18,14 @@ pub fn verify_private_key(_private_key: &str) -> bool {
 }
 
 pub fn normalize_private_key(private_key: &str) -> Result<String, CryptoError> {
-    if is_private_key(private_key) == false {
+    if !is_private_key(private_key) {
         return Err(CryptoError::IncorrectPrivateKey);
     }
 
     // TODO: Consider performance here
     let normalized = private_key.to_lowercase().replace("0x", "");
 
-    if verify_private_key(private_key) == false {
+    if !verify_private_key(private_key) {
         return Err(CryptoError::UnverifiedPrivateKey);
     }
 
@@ -50,7 +50,7 @@ pub fn get_address_from_public_key(public_key: &str) -> Result<String, CryptoErr
 
 pub fn to_checksum_address(address: &str) -> Result<String, CryptoError> {
     let address = address.replace("0x", "");
-    if is_address(&address) == false {
+    if !is_address(&address) {
         return Err(CryptoError::InvalidAddress(address.to_string()));
     }
 
@@ -83,7 +83,7 @@ pub fn to_checksum_address(address: &str) -> Result<String, CryptoError> {
 }
 
 pub fn is_valid_checksum_address(address: &str) -> Result<bool, CryptoError> {
-    Ok(to_checksum_address(&address)? == address)
+    Ok(to_checksum_address(address)? == address)
 }
 
 pub fn generate_private_key() -> String {

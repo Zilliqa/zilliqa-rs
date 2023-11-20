@@ -34,7 +34,7 @@ impl Blockchain {
 
     pub async fn get_balance(&self, address: &str) -> ChainResult<BalanceResponse> {
         let address = if is_bech32(address) {
-            from_bech32_address(&address)?
+            from_bech32_address(address)?
         } else {
             address.to_string()
         };

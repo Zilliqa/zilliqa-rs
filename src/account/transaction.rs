@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::Serializer;
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
     pub version: u32,
@@ -20,38 +20,16 @@ pub struct Transaction {
     pub signature: Option<String>,
 }
 
-impl Default for Transaction {
-    fn default() -> Self {
-        Self {
-            version: Default::default(),
-            nonce: Default::default(),
-            to_addr: Default::default(),
-            amount: Default::default(),
-            pub_key: Default::default(),
-            gas_price: Default::default(),
-            gas_limit: Default::default(),
-            code: Default::default(),
-            data: Default::default(),
-            signature: Default::default(),
-        }
-    }
-}
-
 pub fn to_str<S: Serializer, T: Display>(data: T, serializer: S) -> Result<S::Ok, S::Error> {
     serializer.serialize_str(&data.to_string())
 }
 
+#[derive(Default)]
 pub struct TransactionBuilder {
     inner_transaction: Transaction,
 }
 
 impl TransactionBuilder {
-    pub fn new() -> Self {
-        TransactionBuilder {
-            inner_transaction: Transaction::default(),
-        }
-    }
-
     pub fn version(mut self, version: u32) -> Self {
         self.inner_transaction.version = version;
         self

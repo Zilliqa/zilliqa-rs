@@ -17,7 +17,7 @@ pub fn is_bech32(raw: &str) -> bool {
     let regex = regex::Regex::new("^zil1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{38}$")
         .expect("Failed to create the regex for `is_bech32`");
 
-    regex.is_match(&raw)
+    regex.is_match(raw)
 }
 
 #[cfg(test)]

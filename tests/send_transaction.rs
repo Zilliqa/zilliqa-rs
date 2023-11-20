@@ -15,7 +15,7 @@ async fn send_transaction() {
 
     let account = Account::create_random().unwrap();
 
-    let tx = TransactionBuilder::new()
+    let tx = TransactionBuilder::default()
         .to_address(&to_checksum_address(&account.address).unwrap())
         .amount(200u128 * 10u128.pow(12))
         .gas_price(2000000000u128)

@@ -5,7 +5,7 @@ use crate::{crypto::util::to_checksum_address, util::validation::is_address};
 use super::error::CryptoError;
 
 pub fn to_bech32_address(address: &str) -> Result<String, CryptoError> {
-    if is_address(address) == false {
+    if !is_address(address) {
         return Err(CryptoError::InvalidAddress(address.to_string()));
     }
 
@@ -20,7 +20,7 @@ pub fn from_bech32_address(address: &str) -> Result<String, CryptoError> {
     let address = hex::encode(Vec::<u8>::from_base32(&data).unwrap());
     println!("{} {}", hrp, address);
 
-    Ok(to_checksum_address(&address)?)
+    to_checksum_address(&address)
 }
 
 #[cfg(test)]
