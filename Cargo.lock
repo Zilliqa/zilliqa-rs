@@ -831,6 +831,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "paste"
+version = "1.0.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
+
+[[package]]
 name = "percent-encoding"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1725,11 +1731,13 @@ name = "zilliqa-rs"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "bech32",
  "claim",
  "hex",
  "jsonrpsee",
  "k256",
+ "paste",
  "primitive-types",
  "prost",
  "rand",
@@ -1742,4 +1750,5 @@ dependencies = [
  "thiserror",
  "tokio",
  "tokio-stream",
+ "url",
 ]
