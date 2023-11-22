@@ -4,6 +4,9 @@ use crate::crypto::error::CryptoError;
 
 #[derive(Debug, Error)]
 pub enum ProviderError {
+    #[error("No signers specified")]
+    NoSignerSpecified,
+
     #[error(transparent)]
     JsonRpcError(#[from] jsonrpsee::core::Error),
 

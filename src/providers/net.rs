@@ -10,9 +10,9 @@ pub enum RPCMethod {
     GetShardingStructure,
     GetDsBlock,
     GetLatestDsBlock,
-    GetNumDSBlocks,
-    GetDSBlockRate,
-    DSBlockListing,
+    GetNumDsBlocks,
+    GetDsBlockRate,
+    DsBlockListing,
     GetTxBlock,
     GetLatestTxBlock,
     GetNumTxBlocks,
@@ -21,9 +21,9 @@ pub enum RPCMethod {
     GetNumTransactions,
     GetTransactionRate,
     GetCurrentMiniEpoch,
-    GetCurrentDSEpoch,
+    GetCurrentDsEpoch,
     GetPrevDifficulty,
-    GetPrevDSDifficulty,
+    GetPrevDsDifficulty,
     GetTotalCoinSupply,
     GetMinerInfo,
 
@@ -37,7 +37,7 @@ pub enum RPCMethod {
     GetTxnBodiesForTxBlock,
     GetTxnBodiesForTxBlockEx,
     GetNumTxnsTxEpoch,
-    GetNumTxnsDSEpoch,
+    GetNumTxnsDsEpoch,
     GetMinimumGasPrice,
 
     // Contract-related methods
@@ -55,7 +55,15 @@ pub enum RPCMethod {
 
 impl fmt::Display for RPCMethod {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(self, f)
+        match self {
+            Self::DsBlockListing => write!(f, "DSBlockListing"),
+            Self::GetNumDsBlocks => write!(f, "GetNumDSBlocks"),
+            Self::GetDsBlockRate => write!(f, "GetDSBlockRate"),
+            Self::GetCurrentDsEpoch => write!(f, "GetCurrentDSEpoch"),
+            Self::GetPrevDsDifficulty => write!(f, "GetPrevDSDifficulty"),
+            Self::GetNumTxnsDsEpoch => write!(f, "GetNumTxnsDSEpoch "),
+            _ => fmt::Debug::fmt(self, f),
+        }
     }
 }
 

@@ -1,9 +1,11 @@
 use serde::Deserialize;
+use serde_aux::field_attributes::deserialize_number_from_string;
 
 #[derive(Deserialize, Debug)]
 pub struct BalanceResponse {
     pub nonce: u64,
-    pub balance: String,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub balance: u128,
 }
 
 #[derive(Deserialize, Debug)]
@@ -185,30 +187,35 @@ pub struct ShardInfo {
 
 #[derive(Deserialize, Debug)]
 pub struct TransactionObj {
+    #[serde(rename = "ID")]
     pub id: String,
     pub version: String,
     pub nonce: String,
+    #[serde(rename = "toAddr")]
     pub to_addr: String,
     pub amount: String,
-    pub code: String,
-    pub data: String,
+    pub code: Option<String>,
+    pub data: Option<String>,
+    #[serde(rename = "gasPrice")]
     pub gas_price: String,
+    #[serde(rename = "gasLimit")]
     pub gas_limit: String,
     pub signature: String,
+    #[serde(rename = "senderPubKey")]
     pub sender_pub_key: String,
     pub receipt: TransactionReceiptObj,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct TransactionReceiptObj {
-    pub accepted: bool,
+    pub accepted: Option<bool>,
     pub cumulative_gas: String,
     pub epoch_num: String,
-    pub event_logs: Vec<EventLogEntry>,
-    pub exceptions: Vec<ExceptionEntry>,
+    pub event_logs: Option<Vec<EventLogEntry>>,
+    pub exceptions: Option<Vec<ExceptionEntry>>,
     pub success: bool,
-    pub transitions: Vec<TransitionEntry>,
-    pub errors: String,
+    pub transitions: Option<Vec<TransitionEntry>>,
+    pub errors: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -245,4 +252,24 @@ pub struct TransitionMsg {
     pub _recipient: String,
     pub _tag: String,
     pub params: Vec<EventParam>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct TxnBodiesForTxBlockEx {
+    #[serde(rename = "CurrPage")]
+    pub curr_page: u32,
+    #[serde(rename = "NumPages")]
+    pub num_pages: u32,
+    #[serde(rename = "Transactions")]
+    pub transactions: Vec<TransactionObj>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct TransactionsForTxBlockEx {
+    #[serde(rename = "CurrPage")]
+    pub curr_page: u32,
+    #[serde(rename = "NumPages")]
+    pub num_pages: u32,
+    #[serde(rename = "Transactions")]
+    pub transactions: Vec<Vec<String>>,
 }

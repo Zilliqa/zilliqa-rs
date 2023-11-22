@@ -5,6 +5,7 @@ pub mod net;
 pub mod provider;
 pub mod types;
 
+pub use error::ProviderError;
 pub use http::Provider as Http;
 pub use provider::Provider;
 pub use types::*;
@@ -13,8 +14,6 @@ use async_trait::async_trait;
 use jsonrpsee::core::traits::ToRpcParams;
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
-
-use self::error::ProviderError;
 
 #[async_trait]
 pub trait JsonRpcClient: Debug + Send + Sync {

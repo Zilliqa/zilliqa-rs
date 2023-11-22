@@ -1,4 +1,4 @@
-pub use k256::{ecdsa::Signature, PublicKey, SecretKey};
+use super::{PublicKey, SecretKey, Signature};
 use k256::{
     elliptic_curve::{ops::Reduce, sec1::ToEncodedPoint, Group},
     AffinePoint, Scalar, U256,
@@ -110,8 +110,7 @@ mod tests {
             ),
         ];
         for (message, public_key, secret_key, k, r, s) in cases {
-            let k =
-                Scalar::from_repr(FieldBytes::clone_from_slice(&hex::decode(k).unwrap())).unwrap();
+            let k = Scalar::from_repr(FieldBytes::clone_from_slice(&hex::decode(k).unwrap())).unwrap();
             let message = hex::decode(message).unwrap();
             let secret_key = SecretKey::from_slice(&hex::decode(secret_key).unwrap()).unwrap();
             let public_key = PublicKey::from_sec1_bytes(&hex::decode(public_key).unwrap()).unwrap();

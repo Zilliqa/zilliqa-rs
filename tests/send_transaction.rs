@@ -1,34 +1,40 @@
-// use zilliqa_rs::{
-//     account::{Account, TransactionBuilder},
-//     crypto::to_checksum_address,
-//     zilliqa::Zilliqa,
-// };
+use anyhow::Result;
+use claim::assert_gt;
+use zilliqa_rs::{
+    account::TransactionBuilder,
+    middlewares::Middleware,
+    providers::{Http, Provider},
+    signers::LocalWallet,
+};
 
-// #[tokio::test]
-// async fn send_transaction() {
-//     let zilliqa = Zilliqa::new("http://127.0.0.1:5555", 1).unwrap();
-//     zilliqa
-//         .wallet
-//         .borrow_mut()
-//         .add_by_private_key("d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba")
-//         .unwrap();
+#[tokio::test]
+async fn send_transaction() -> Result<()> {
+    const END_POINT: &str = "http://localhost:5555";
 
-//     let account = Account::create_random().unwrap();
+    let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
 
-//     let tx = TransactionBuilder::default()
-//         .to_address(&to_checksum_address(&account.address).unwrap())
-//         .amount(200u128 * 10u128.pow(12))
-//         .gas_price(2000000000u128)
-//         .gas_limit(50u64)
-//         .build();
+    let provider = Provider::<Http>::try_from(END_POINT)?
+        .with_chain_id(1)
+        .with_signer(wallet.clone());
 
-//     let res = zilliqa.blockchain.send_transaction(tx).await.unwrap();
-//     println!("{:?}", res);
+    let sender_balance = provider.get_balance(&wallet.address).await?;
 
-//     let res = zilliqa
-//         .blockchain
-//         .get_balance(&account.address)
-//         .await
-//         .unwrap();
-//     println!("{:?}", res);
-// }
+    assert_gt!(sender_balance.balance, 200u128);
+
+    let receiver = LocalWallet::create_random()?;
+    let tx = TransactionBuilder::default()
+        .to_address(&receiver.checksum_address)
+        .nonce(4)
+        .amount(200u128 * 10u128.pow(12))
+        .gas_price(2000000000u128)
+        .gas_limit(50u64)
+        .build();
+
+    provider.send_transaction(tx).await?;
+
+    let res = provider.get_balance(&receiver.address).await?;
+
+    assert_gt!(res.balance, 200u128);
+
+    Ok(())
+}

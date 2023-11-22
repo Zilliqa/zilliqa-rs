@@ -28,9 +28,6 @@ impl JsonRpcClient for Provider {
         method: &str,
         params: T,
     ) -> Result<R, ProviderError> {
-        self.client
-            .request(&method.to_string(), params)
-            .await
-            .map_err(ProviderError::JsonRpcError)
+        self.client.request(method, params).await.map_err(ProviderError::JsonRpcError)
     }
 }

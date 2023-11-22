@@ -1,4 +1,7 @@
-use zilliqa_rs::providers::{Http, Provider};
+use zilliqa_rs::{
+    middlewares::Middleware,
+    providers::{Http, Provider},
+};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -6,9 +9,7 @@ async fn main() -> anyhow::Result<()> {
 
     println!(
         "{:?}",
-        provider
-            .get_balance("0x381f4008505e940ad7681ec3468a719060caf796")
-            .await
+        provider.get_balance("0x381f4008505e940ad7681ec3468a719060caf796").await
     );
 
     Ok(())
