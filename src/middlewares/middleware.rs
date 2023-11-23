@@ -1,7 +1,7 @@
 use crate::{
-    account::Transaction,
     crypto::Signature,
     providers::{types::*, JsonRpcClient, Provider},
+    transaction::Transaction,
 };
 use async_trait::async_trait;
 
@@ -36,7 +36,7 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
     // async fn sign<T: Into<Bytes> + Send + Sync>(&self, data: T, from: &Address) -> Result<Signature, Self::Error> {
     //     self.inner().sign(data, from).await.map_err(MiddlewareError::from_err)
     // }
-    fn get_chainid(&self) -> u64 {
+    fn get_chainid(&self) -> u16 {
         self.inner().get_chainid()
     }
 

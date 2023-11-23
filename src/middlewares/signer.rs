@@ -1,6 +1,10 @@
 use async_trait::async_trait;
 
-use crate::{account::Transaction, providers::CreateTransactionResponse, signers::LocalWallet};
+use crate::{
+    providers::CreateTransactionResponse,
+    signers::LocalWallet,
+    transaction::{Transaction, Version},
+};
 
 use super::{Middleware, MiddlewareError, MiddlewareResult};
 
@@ -32,20 +36,23 @@ impl<M: Middleware> Middleware for SignerMiddleware<M> {
     }
 
     async fn send_transaction(&self, mut tx: Transaction) -> MiddlewareResult<CreateTransactionResponse> {
-        // TODO: Refactor version
-        if tx.version == 0 {
-            let msg_version = 1u32;
-            let chain_id = self.inner().get_chainid();
-            let version = (chain_id as u32) << 16 | msg_version;
-            tx.version = version;
+        if !tx.version.valid() {
+            tx.version = Version::new(self.inner().get_chainid());
+        }
+
+        // TODO: Make it a middleware like ethers-rs
+        // TODO: Is it a sane condition?
+        if tx.nonce == u64::default() {
+            let balance = self.inner().get_balance(&self.signer.address).await?;
+            tx.nonce = balance.nonce + 1;
         }
 
         let signature = self.sign_transaction(&tx)?;
         tx.signature = Some(hex::encode(signature.to_bytes()));
 
-        tx.pub_key = Some(self.signer.public_key.clone());
+        tx.pub_key = Some(self.signer.public_key().to_string().clone());
 
-        println!("{:?}", tx);
+        println!("{}", serde_json::to_string_pretty(&tx).unwrap());
         self.inner().create_transaction(tx).await
     }
 

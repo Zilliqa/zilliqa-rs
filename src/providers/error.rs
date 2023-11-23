@@ -1,9 +1,12 @@
 use thiserror::Error;
 
-use crate::crypto::error::CryptoError;
+use crate::{crypto::error::CryptoError, transaction::Version};
 
 #[derive(Debug, Error)]
 pub enum ProviderError {
+    #[error("Version ({0}) set for the transaction is invalid")]
+    InvalidVersionIsSetForTransaction(Version),
+
     #[error("No signers specified")]
     NoSignerSpecified,
 

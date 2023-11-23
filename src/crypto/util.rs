@@ -65,10 +65,7 @@ pub fn to_checksum_address(address: &str) -> Result<String, CryptoError> {
                 c
             } else {
                 let cond = v
-                    .bitand(
-                        primitive_types::U256::from(2)
-                            .pow(primitive_types::U256::from(255 - 6 * i)),
-                    )
+                    .bitand(primitive_types::U256::from(2).pow(primitive_types::U256::from(255 - 6 * i)))
                     .ge(&primitive_types::U256::one());
                 if cond {
                     c.to_ascii_uppercase()
@@ -95,8 +92,7 @@ pub fn generate_private_key() -> String {
 mod tests {
     use crate::{
         crypto::util::{
-            get_address_from_public_key, get_pub_key_from_private_key, is_valid_checksum_address,
-            to_checksum_address,
+            get_address_from_public_key, get_pub_key_from_private_key, is_valid_checksum_address, to_checksum_address,
         },
         util::validation::is_private_key,
     };
@@ -108,10 +104,7 @@ mod tests {
         let private_key = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba";
         let expected_pub_key = "03bfad0f0b53cff5213b5947f3ddd66acee8906aba3610c111915aecc84092e052";
 
-        assert_eq!(
-            get_pub_key_from_private_key(private_key).unwrap(),
-            expected_pub_key
-        );
+        assert_eq!(get_pub_key_from_private_key(private_key).unwrap(), expected_pub_key);
     }
 
     #[test]
@@ -141,10 +134,7 @@ mod tests {
         let pub_key = "03bfad0f0b53cff5213b5947f3ddd66acee8906aba3610c111915aecc84092e052";
         let expected_address = "0x381f4008505e940AD7681EC3468a719060caF796";
 
-        assert_eq!(
-            get_address_from_public_key(pub_key).unwrap(),
-            expected_address
-        )
+        assert_eq!(get_address_from_public_key(pub_key).unwrap(), expected_address)
     }
 
     #[test]

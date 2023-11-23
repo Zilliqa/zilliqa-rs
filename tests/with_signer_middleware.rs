@@ -1,8 +1,8 @@
 use zilliqa_rs::{
-    account::{Transaction, TransactionBuilder},
     middlewares::Middleware,
     providers::{Http, Provider},
     signers::LocalWallet,
+    transaction::{Transaction, TransactionBuilder},
 };
 
 // TODO: Make it a real test
@@ -14,11 +14,11 @@ async fn test_with_signer_middleware() -> Result<(), Box<dyn std::error::Error>>
     let provider = Provider::<Http>::try_from(END_POINT).unwrap().with_signer(wallet);
 
     let tx: Transaction = TransactionBuilder::default()
-        .to_address(&"0xf6dad9e193fa2959a849b81caf9cb6ecde466771")
+        .to_address("0xf6dad9e193fa2959a849b81caf9cb6ecde466771".parse()?)
         .amount(200u128 * 10u128.pow(12))
         .gas_price(2000000000u128)
         .gas_limit(50u64)
-        .into();
+        .build();
 
     let signature = provider.sign_transaction(&tx).unwrap();
     println!("{:?}", signature);

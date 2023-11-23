@@ -19,4 +19,9 @@ pub enum CryptoError {
 
     #[error(transparent)]
     Bech32Error(#[from] bech32::Error),
+
+    #[error(transparent)]
+    K256Error(#[from] k256::elliptic_curve::Error),
 }
+
+pub type CryptoResult<T> = Result<T, CryptoError>;

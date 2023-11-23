@@ -7,15 +7,14 @@ pub fn is_private_key(private_key: &str) -> bool {
 }
 
 pub fn is_byte_string(str: &str, len: usize) -> bool {
-    let regex = regex::Regex::new(&format!("^[0-9a-fA-F]{{{}}}$", len))
-        .expect("Failed to create the regex for `is_byte_string`");
+    let regex = regex::Regex::new(&format!("^[0-9a-fA-F]{{{}}}$", len)).expect("Failed to create the regex for `is_byte_string`");
     let str = str.replace("0x", "");
     regex.is_match(&str)
 }
 
 pub fn is_bech32(raw: &str) -> bool {
-    let regex = regex::Regex::new("^zil1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{38}$")
-        .expect("Failed to create the regex for `is_bech32`");
+    let regex =
+        regex::Regex::new("^zil1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{38}$").expect("Failed to create the regex for `is_bech32`");
 
     regex.is_match(raw)
 }
@@ -31,15 +30,13 @@ mod is_byte_string_tests {
     }
 
     #[test]
-    fn is_byte_string_should_return_true_for_a_valid_byte_string_with_correct_size_even_if_its_prepended_with_0x(
-    ) {
+    fn is_byte_string_should_return_true_for_a_valid_byte_string_with_correct_size_even_if_its_prepended_with_0x() {
         let str = "0x1234567890";
         assert!(is_byte_string(str, str.len() - 2)) // -2 for 0x
     }
 
     #[test]
-    fn is_byte_string_should_return_true_for_a_valid_byte_string_with_correct_size_when_it_contains_letters_a_f(
-    ) {
+    fn is_byte_string_should_return_true_for_a_valid_byte_string_with_correct_size_when_it_contains_letters_a_f() {
         let str = "1234567890aabbccddeeff";
         assert!(is_byte_string(str, str.len()))
     }
@@ -104,8 +101,6 @@ mod is_bech32_tests {
     #[test]
     fn is_bech32_should_return_false_for_invalid_ones() {
         assert!(!is_bech32("liz18q05qzzst62q44mgrmp5dzn3jpsv4aukxredu2"));
-        assert!(!is_bech32(
-            "zil18q05qzzst62q44mgrmp5dzn3jpsv4aukxredu2ssaas"
-        ));
+        assert!(!is_bech32("zil18q05qzzst62q44mgrmp5dzn3jpsv4aukxredu2ssaas"));
     }
 }

@@ -1,47 +1,29 @@
 use std::str::FromStr;
 
-use k256::{ecdsa::Signature, PublicKey, SecretKey};
+use k256::ecdsa::Signature;
 use primitive_types::H160;
 use prost::Message;
 
 use crate::{
-    account::Transaction,
-    crypto::{
-        bech32::to_bech32_address,
-        generate_private_key,
-        schnorr::sign,
-        to_checksum_address,
-        util::{get_address_from_public_key, get_pub_key_from_private_key, normalize_private_key},
-    },
+    crypto::{generate_private_key, schnorr::sign, PrivateKey, PublicKey, ZilAddress},
     proto::{Nonce, ProtoTransactionCoreInfo},
+    transaction::Transaction,
 };
 
 use super::error::{SignerError, SignerResult};
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LocalWallet {
-    pub private_key: String,
-    pub public_key: String,
-    pub address: String,
-    pub checksum_address: String,
-    pub bech32_address: String,
+    pub private_key: PrivateKey,
+    pub address: ZilAddress,
 }
 
 impl LocalWallet {
     pub fn new(private_key: &str) -> SignerResult<Self> {
-        let private_key = normalize_private_key(private_key)?;
-        let public_key = get_pub_key_from_private_key(&private_key)?;
-        let address = get_address_from_public_key(&public_key)?;
-        let checksum_address = to_checksum_address(&address)?;
-        let bech32_address = to_bech32_address(&address)?;
+        let private_key = private_key.parse::<PrivateKey>()?;
+        let address = ZilAddress::try_from(&private_key.public_key())?;
 
-        Ok(Self {
-            private_key,
-            public_key,
-            address,
-            checksum_address,
-            bech32_address,
-        })
+        Ok(Self { private_key, address })
     }
 
     pub fn create_random() -> SignerResult<Self> {
@@ -50,33 +32,30 @@ impl LocalWallet {
     }
 
     pub fn sign(&self, message: &[u8]) -> Signature {
-        let secret_key = SecretKey::from_slice(&hex::decode(&self.private_key).unwrap()).unwrap();
-        sign(message, &secret_key)
+        sign(message, &self.private_key)
+    }
+
+    pub fn public_key(&self) -> PublicKey {
+        self.private_key.public_key()
     }
 
     pub fn sign_transaction(&self, tx: &Transaction) -> SignerResult<Signature> {
         let to_addr: H160 = tx.to_addr.parse().unwrap();
-        let public_key = PublicKey::from_sec1_bytes(&hex::decode(&self.public_key)?)?;
-        let secret_key = SecretKey::from_slice(&hex::decode(&self.private_key)?)?;
 
         let proto = ProtoTransactionCoreInfo {
-            version: tx.version,
+            version: tx.version.pack(),
             toaddr: to_addr.as_bytes().to_vec(),
-            senderpubkey: Some(public_key.to_sec1_bytes().into()),
+            senderpubkey: Some(self.private_key.public_key().to_sec1_bytes().into()),
             amount: Some(tx.amount.to_be_bytes().to_vec().into()),
             gasprice: Some(tx.gas_price.to_be_bytes().to_vec().into()),
             gaslimit: tx.gas_limit,
             oneof2: Some(Nonce::Nonce(tx.nonce)),
-            oneof8: None,
-            oneof9: None,
+            oneof8: Some(crate::proto::Code::Code(tx.code.as_bytes().to_vec())),
+            oneof9: Some(crate::proto::Data::Data(tx.data.as_bytes().to_vec())),
         };
 
         let txn_data = proto.encode_to_vec();
-        Ok(sign(&txn_data, &secret_key))
-
-        // tx.signature = Some(hex::encode(signature.to_bytes()));
-        // tx.pub_key = Some(self.public_key.clone());
-        // tx
+        Ok(sign(&txn_data, &self.private_key))
     }
 }
 
@@ -91,9 +70,8 @@ impl FromStr for LocalWallet {
 #[cfg(test)]
 mod tests {
     use claim::assert_some;
-    use k256::PublicKey;
 
-    use crate::crypto::{schnorr::verify, to_checksum_address};
+    use crate::crypto::schnorr::verify;
 
     use super::LocalWallet;
 
@@ -105,11 +83,10 @@ mod tests {
         assert_eq!(
             account,
             LocalWallet {
-                private_key: String::from("d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba"),
-                public_key: String::from("03bfad0f0b53cff5213b5947f3ddd66acee8906aba3610c111915aecc84092e052"),
-                address: String::from("0x381f4008505e940AD7681EC3468a719060caF796"),
-                checksum_address: to_checksum_address("0x381f4008505e940AD7681EC3468a719060caF796").unwrap(),
-                bech32_address: String::from("zil18q05qzzst62q44mgrmp5dzn3jpsv4aukxredu2")
+                private_key: "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba"
+                    .parse()
+                    .unwrap(),
+                address: "0x381f4008505e940AD7681EC3468a719060caF796".parse().unwrap()
             }
         );
     }
@@ -120,11 +97,10 @@ mod tests {
         assert_eq!(
             account,
             LocalWallet {
-                private_key: String::from("d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba"),
-                public_key: String::from("03bfad0f0b53cff5213b5947f3ddd66acee8906aba3610c111915aecc84092e052"),
-                address: String::from("0x381f4008505e940AD7681EC3468a719060caF796"),
-                checksum_address: to_checksum_address("0x381f4008505e940AD7681EC3468a719060caF796").unwrap(),
-                bech32_address: String::from("zil18q05qzzst62q44mgrmp5dzn3jpsv4aukxredu2")
+                private_key: "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba"
+                    .parse()
+                    .unwrap(),
+                address: "0x381f4008505e940AD7681EC3468a719060caF796".parse().unwrap()
             }
         );
     }
@@ -136,8 +112,10 @@ mod tests {
         let signature = account.sign(&hex::decode("11223344aabb").unwrap());
         println!("{} {}", signature.r().to_string(), signature.s().to_string());
 
-        let public_key = PublicKey::from_sec1_bytes(&hex::decode(account.public_key).unwrap()).unwrap();
-
-        assert_some!(verify(&hex::decode("11223344aabb").unwrap(), public_key, signature));
+        assert_some!(verify(
+            &hex::decode("11223344aabb").unwrap(),
+            &account.public_key(),
+            &signature
+        ));
     }
 }

@@ -8,9 +8,9 @@ use serde::de::DeserializeOwned;
 use url::Url;
 
 use crate::{
-    account::Transaction,
     middlewares::{signer::SignerMiddleware, Middleware, MiddlewareError, MiddlewareResult},
     signers::LocalWallet,
+    transaction::Transaction,
 };
 
 use super::{
@@ -22,12 +22,12 @@ use super::{
 #[derive(Clone, Debug)]
 pub struct Provider<P> {
     inner: P,
-    chain_id: u64,
+    chain_id: u16,
 }
 
 impl<P: JsonRpcClient> Provider<P> {
     /// Instantiate a new provider with a backend.
-    pub fn new(provider: P, chain_id: u64) -> Self {
+    pub fn new(provider: P, chain_id: u16) -> Self {
         Self {
             inner: provider,
             chain_id,
@@ -38,7 +38,7 @@ impl<P: JsonRpcClient> Provider<P> {
         SignerMiddleware::new(self, signer)
     }
 
-    pub fn with_chain_id(mut self, chain_id: u64) -> Self {
+    pub fn with_chain_id(mut self, chain_id: u16) -> Self {
         self.chain_id = chain_id;
         self
     }
@@ -57,7 +57,7 @@ impl TryFrom<&str> for Provider<Http> {
     type Error = ProviderError;
 
     fn try_from(src: &str) -> Result<Self, Self::Error> {
-        Ok(Provider::new(Http::new(Url::parse(src)?)?, u64::default()))
+        Ok(Provider::new(Http::new(Url::parse(src)?)?, u16::default()))
     }
 }
 
@@ -75,7 +75,7 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         self
     }
 
-    fn get_chainid(&self) -> u64 {
+    fn get_chainid(&self) -> u16 {
         self.chain_id
     }
 
@@ -88,6 +88,12 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
     }
 
     async fn create_transaction(&self, tx: Transaction) -> MiddlewareResult<CreateTransactionResponse> {
+        if !tx.version.valid() {
+            return Err(MiddlewareError::ProviderError(
+                ProviderError::InvalidVersionIsSetForTransaction(tx.version),
+            ));
+        }
+
         Ok(self.send_request(CreateTransaction, rpc_params![tx]).await?)
     }
 

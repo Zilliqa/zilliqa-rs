@@ -1,4 +1,4 @@
-use super::{PublicKey, SecretKey, Signature};
+use super::{PrivateKey, PublicKey, Signature};
 use k256::{
     elliptic_curve::{ops::Reduce, sec1::ToEncodedPoint, Group},
     AffinePoint, Scalar, U256,
@@ -6,7 +6,7 @@ use k256::{
 use sha2::{Digest, Sha256};
 
 #[allow(unused)]
-pub fn sign(message: &[u8], secret_key: &SecretKey) -> Signature {
+pub fn sign(message: &[u8], secret_key: &PrivateKey) -> Signature {
     loop {
         let k = Scalar::generate_vartime(&mut rand::thread_rng());
 
@@ -16,7 +16,7 @@ pub fn sign(message: &[u8], secret_key: &SecretKey) -> Signature {
     }
 }
 
-fn sign_inner(k: Scalar, message: &[u8], secret_key: &SecretKey) -> Option<Signature> {
+fn sign_inner(k: Scalar, message: &[u8], secret_key: &PrivateKey) -> Option<Signature> {
     let public_key = secret_key.public_key();
 
     // 2. Compute the commitment Q = kG, where G is the base point.
@@ -46,7 +46,7 @@ fn sign_inner(k: Scalar, message: &[u8], secret_key: &SecretKey) -> Option<Signa
     Signature::from_scalars(r.to_bytes(), s.to_bytes()).ok()
 }
 
-pub fn verify(message: &[u8], public_key: PublicKey, signature: Signature) -> Option<()> {
+pub fn verify(message: &[u8], public_key: &PublicKey, signature: &Signature) -> Option<()> {
     let (r, s) = signature.split_scalars();
 
     // 2. Compute Q = sG + r*kpub
@@ -74,7 +74,9 @@ pub fn verify(message: &[u8], public_key: PublicKey, signature: Signature) -> Op
 
 #[cfg(test)]
 mod tests {
-    use k256::{elliptic_curve::PrimeField, FieldBytes, PublicKey, Scalar, SecretKey};
+    use k256::{elliptic_curve::PrimeField, FieldBytes, Scalar};
+
+    use crate::crypto::{PrivateKey, PublicKey};
 
     use super::verify;
 
@@ -112,15 +114,15 @@ mod tests {
         for (message, public_key, secret_key, k, r, s) in cases {
             let k = Scalar::from_repr(FieldBytes::clone_from_slice(&hex::decode(k).unwrap())).unwrap();
             let message = hex::decode(message).unwrap();
-            let secret_key = SecretKey::from_slice(&hex::decode(secret_key).unwrap()).unwrap();
-            let public_key = PublicKey::from_sec1_bytes(&hex::decode(public_key).unwrap()).unwrap();
+            let secret_key = secret_key.parse::<PrivateKey>().unwrap();
+            let public_key = public_key.parse::<PublicKey>().unwrap();
 
             let signature = sign_inner(k, &message, &secret_key).unwrap();
 
             assert_eq!(signature.r().to_string(), r);
             assert_eq!(signature.s().to_string(), s);
 
-            assert!(verify(&message, public_key, signature).is_some());
+            assert!(verify(&message, &public_key, &signature).is_some());
         }
     }
 }
