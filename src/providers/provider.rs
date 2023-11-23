@@ -15,8 +15,8 @@ use crate::{
 
 use super::{
     error::{ProviderError, ProviderResult},
-    BalanceResponse, BlockList, BlockchainInfo, CreateTransactionResponse, DsBlock, Http, JsonRpcClient, MinerInfo,
-    ShardingStructure, TransactionObj, TxBlock, TxList,
+    BalanceResponse, BlockList, BlockchainInfo, DsBlock, Http, JsonRpcClient, MinerInfo, ShardingStructure, TransactionObj,
+    TxBlock, TxList,
 };
 
 #[derive(Clone, Debug)]
@@ -83,11 +83,11 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         Err(MiddlewareError::ProviderError(ProviderError::NoSignerSpecified))
     }
 
-    async fn send_transaction(&self, mut _tx: Transaction) -> MiddlewareResult<CreateTransactionResponse> {
+    async fn send_transaction<T: Send + DeserializeOwned>(&self, mut _tx: Transaction) -> MiddlewareResult<T> {
         Err(MiddlewareError::NoSignerCaughtTheSendRequest)
     }
 
-    async fn create_transaction(&self, tx: Transaction) -> MiddlewareResult<CreateTransactionResponse> {
+    async fn create_transaction<T: DeserializeOwned + Send>(&self, tx: Transaction) -> MiddlewareResult<T> {
         if !tx.version.valid() {
             return Err(MiddlewareError::ProviderError(
                 ProviderError::InvalidVersionIsSetForTransaction(tx.version),

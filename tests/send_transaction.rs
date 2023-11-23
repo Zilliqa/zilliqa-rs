@@ -2,7 +2,7 @@ use anyhow::Result;
 use claim::assert_gt;
 use zilliqa_rs::{
     middlewares::{Middleware, MiddlewareError},
-    providers::{Http, Provider, ProviderError},
+    providers::{CreateTransactionResponse, Http, Provider, ProviderError},
     signers::LocalWallet,
     transaction::{TransactionBuilder, Version},
 };
@@ -55,7 +55,7 @@ async fn if_version_is_not_set_create_transaction_should_return_error() -> Resul
         .gas_limit(50u64)
         .build();
 
-    let res = provider.send_transaction(tx).await;
+    let res: Result<CreateTransactionResponse, _> = provider.send_transaction(tx).await;
     assert!(matches!(
         res,
         Err(MiddlewareError::ProviderError(

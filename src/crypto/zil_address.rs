@@ -9,7 +9,7 @@ use super::{
     to_checksum_address, PublicKey,
 };
 
-#[derive(Debug, PartialEq, Clone, serde::Serialize, Default)]
+#[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize, Default)]
 pub struct ZilAddress(String);
 
 impl Deref for ZilAddress {

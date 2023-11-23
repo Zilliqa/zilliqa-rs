@@ -4,6 +4,7 @@ use crate::{
     transaction::Transaction,
 };
 use async_trait::async_trait;
+use serde::de::DeserializeOwned;
 
 use super::MiddlewareResult;
 
@@ -40,7 +41,11 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
         self.inner().get_chainid()
     }
 
-    async fn send_transaction(&self, tx: Transaction) -> MiddlewareResult<CreateTransactionResponse> {
+    async fn deploy_contract(&self, tx: Transaction) -> MiddlewareResult<DeployContractResponse> {
+        self.send_transaction::<DeployContractResponse>(tx).await
+    }
+
+    async fn send_transaction<T: Send + DeserializeOwned>(&self, tx: Transaction) -> MiddlewareResult<T> {
         self.inner().send_transaction(tx).await
     }
 
@@ -48,7 +53,7 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
         self.inner().sign_transaction(tx)
     }
 
-    async fn create_transaction(&self, tx: Transaction) -> MiddlewareResult<CreateTransactionResponse> {
+    async fn create_transaction<T: Send + DeserializeOwned>(&self, tx: Transaction) -> MiddlewareResult<T> {
         self.inner().create_transaction(tx).await
     }
 

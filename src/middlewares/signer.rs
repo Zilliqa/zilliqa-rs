@@ -1,7 +1,7 @@
 use async_trait::async_trait;
+use serde::de::DeserializeOwned;
 
 use crate::{
-    providers::CreateTransactionResponse,
     signers::LocalWallet,
     transaction::{Transaction, Version},
 };
@@ -35,7 +35,7 @@ impl<M: Middleware> Middleware for SignerMiddleware<M> {
         true
     }
 
-    async fn send_transaction(&self, mut tx: Transaction) -> MiddlewareResult<CreateTransactionResponse> {
+    async fn send_transaction<T: Send + DeserializeOwned>(&self, mut tx: Transaction) -> MiddlewareResult<T> {
         if !tx.version.valid() {
             tx.version = Version::new(self.inner().get_chainid());
         }
@@ -52,7 +52,6 @@ impl<M: Middleware> Middleware for SignerMiddleware<M> {
 
         tx.pub_key = Some(self.signer.public_key().to_string().clone());
 
-        println!("{}", serde_json::to_string_pretty(&tx).unwrap());
         self.inner().create_transaction(tx).await
     }
 

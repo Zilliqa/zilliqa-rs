@@ -1,29 +1,15 @@
-use std::path::Path;
+use std::{path::Path, sync::Arc};
 
 use anyhow::Result;
 use zilliqa_rs::{
     contract::{ContractFactory, Init, Value},
-    middlewares::Middleware,
     providers::{Http, Provider},
     signers::LocalWallet,
 };
 
-const CONTRACT_PATH: &str = "tests/contracts/Timestamp.scilla";
-
-//   {
-//     vname: '_scilla_version',
-//     type: 'Uint32',
-//     value: '0',
-//   },
-
 #[tokio::test]
-async fn deploy_contract() -> Result<()> {
-    let init = Init(vec![Value::new("_scilla_version", "Uint32", "0")]);
-
-    let tx = ContractFactory::deploy_from_file(&Path::new(CONTRACT_PATH), init)
-        .await
-        .unwrap();
-
+async fn deploy_contract_without_constructor_parameter() -> Result<()> {
+    const CONTRACT_PATH: &str = "tests/contracts/Timestamp.scilla";
     const END_POINT: &str = "http://localhost:5555";
 
     let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
@@ -32,8 +18,36 @@ async fn deploy_contract() -> Result<()> {
         .with_chain_id(1)
         .with_signer(wallet.clone());
 
-    let response = provider.send_transaction(tx).await?;
+    let factory = ContractFactory::new(Arc::new(provider));
 
-    println!("{:?}", response);
+    let init = Init(vec![Value::new("_scilla_version", "Uint32", "0")]);
+
+    let contract = factory.deploy_from_file(&Path::new(CONTRACT_PATH), init).await.unwrap();
+
+    println!("addr: {:?}", contract);
+    Ok(())
+}
+
+#[tokio::test]
+async fn deploy_contract_with_constructor_parameter() -> Result<()> {
+    const CONTRACT_PATH: &str = "tests/contracts/HelloWorld.scilla";
+    const END_POINT: &str = "http://localhost:5555";
+
+    let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
+
+    let provider = Provider::<Http>::try_from(END_POINT)?
+        .with_chain_id(1)
+        .with_signer(wallet.clone());
+
+    let factory = ContractFactory::new(Arc::new(provider));
+
+    let init = Init(vec![
+        Value::new("_scilla_version", "Uint32", "0"),
+        Value::new("owner", "ByStr20", &wallet.address.to_string()),
+    ]);
+
+    let contract = factory.deploy_from_file(&Path::new(CONTRACT_PATH), init).await.unwrap();
+
+    println!("addr: {:?}", contract);
     Ok(())
 }

@@ -1,9 +1,15 @@
 pub mod error;
 pub mod factory;
 
-pub struct Contract;
+#[derive(Debug)]
+pub struct Contract {
+    pub address: ZilAddress,
+}
+
 pub use factory::Factory as ContractFactory;
 use serde::Serialize;
+
+use crate::crypto::ZilAddress;
 
 #[derive(Debug, Serialize)]
 pub struct Init(pub Vec<Value>);
@@ -13,7 +19,7 @@ pub struct Value {
     vname: String,
 
     #[serde(rename = "type")]
-    type_: String,
+    r#type: String,
     value: String,
 }
 
@@ -22,7 +28,7 @@ impl Value {
         Self {
             vname: vname.to_string(),
             value: value.to_string(),
-            type_: type_.to_string(),
+            r#type: type_.to_string(),
         }
     }
 }

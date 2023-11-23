@@ -1,6 +1,8 @@
 use serde::Deserialize;
 use serde_aux::field_attributes::deserialize_number_from_string;
 
+use crate::crypto::ZilAddress;
+
 #[derive(Deserialize, Debug)]
 pub struct BalanceResponse {
     pub nonce: u64,
@@ -15,6 +17,15 @@ pub struct CreateTransactionResponse {
 
     #[serde(rename = "Info")]
     pub info: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct DeployContractResponse {
+    #[serde(flatten)]
+    pub response: CreateTransactionResponse,
+
+    #[serde(rename = "ContractAddress")]
+    pub contract_address: ZilAddress,
 }
 
 // FIXME: Why #[serde(rename_all = "PascalCase")] does not work?!
