@@ -41,7 +41,7 @@ pub enum RPCMethod {
     GetMinimumGasPrice,
 
     // Contract-related methods
-    GetContractAddressFromTransactionID,
+    GetContractAddressFromTransactionId,
     GetSmartContracts,
     GetSmartContractCode,
     GetSmartContractInit,
@@ -61,7 +61,10 @@ impl fmt::Display for RPCMethod {
             Self::GetDsBlockRate => write!(f, "GetDSBlockRate"),
             Self::GetCurrentDsEpoch => write!(f, "GetCurrentDSEpoch"),
             Self::GetPrevDsDifficulty => write!(f, "GetPrevDSDifficulty"),
-            Self::GetNumTxnsDsEpoch => write!(f, "GetNumTxnsDSEpoch "),
+            Self::GetNumTxnsDsEpoch => write!(f, "GetNumTxnsDSEpoch"),
+            Self::GetContractAddressFromTransactionId => {
+                write!(f, "GetContractAddressFromTransactionID")
+            }
             _ => fmt::Debug::fmt(self, f),
         }
     }

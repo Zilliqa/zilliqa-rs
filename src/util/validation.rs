@@ -6,6 +6,10 @@ pub fn is_private_key(private_key: &str) -> bool {
     is_byte_string(private_key, 64)
 }
 
+pub fn is_tx_hash(tx_hash: &str) -> bool {
+    is_byte_string(tx_hash, 64)
+}
+
 pub fn is_byte_string(str: &str, len: usize) -> bool {
     let regex = regex::Regex::new(&format!("^[0-9a-fA-F]{{{}}}$", len)).expect("Failed to create the regex for `is_byte_string`");
     let str = str.replace("0x", "");
@@ -17,6 +21,26 @@ pub fn is_bech32(raw: &str) -> bool {
         regex::Regex::new("^zil1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{38}$").expect("Failed to create the regex for `is_bech32`");
 
     regex.is_match(raw)
+}
+
+#[cfg(test)]
+mod is_tx_hash_tests {
+    use super::is_tx_hash;
+
+    #[test]
+    fn is_tx_hash_should_return_true_for_a_valid_hash() {
+        let hash = "bdadfd994f452df803cc223d1f417b02830ac96dbe5edad1b9f8d58613f95206";
+        assert!(is_tx_hash(hash));
+
+        let hash = "bdadfd994f452df803cc223d1f417b02830ac96dbe5edad1b9f8d58613f95206".to_ascii_uppercase();
+        assert!(is_tx_hash(&hash));
+    }
+
+    #[test]
+    fn is_tx_hash_should_return_false_for_a_invalid_hash() {
+        let hash = "bdadfd994f452df803cc223d102830ac96dbe5edad1b9f8d58613f95206";
+        assert!(!is_tx_hash(hash));
+    }
 }
 
 #[cfg(test)]

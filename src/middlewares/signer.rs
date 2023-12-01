@@ -1,12 +1,9 @@
 use async_trait::async_trait;
 use serde::de::DeserializeOwned;
 
-use crate::{
-    signers::LocalWallet,
-    transaction::{Transaction, Version},
-};
+use crate::{providers::CreateTransactionRequest, signers::LocalWallet, transaction::Version, Error};
 
-use super::{Middleware, MiddlewareError, MiddlewareResult};
+use super::Middleware;
 
 #[derive(Debug)]
 pub struct SignerMiddleware<M> {
@@ -35,7 +32,10 @@ impl<M: Middleware> Middleware for SignerMiddleware<M> {
         true
     }
 
-    async fn send_transaction<T: Send + DeserializeOwned>(&self, mut tx: Transaction) -> MiddlewareResult<T> {
+    async fn send_transaction_without_confirm<T: Send + DeserializeOwned>(
+        &self,
+        mut tx: CreateTransactionRequest,
+    ) -> Result<T, Error> {
         if !tx.version.valid() {
             tx.version = Version::new(self.inner().get_chainid());
         }
@@ -55,7 +55,11 @@ impl<M: Middleware> Middleware for SignerMiddleware<M> {
         self.inner().create_transaction(tx).await
     }
 
-    fn sign_transaction(&self, tx: &Transaction) -> MiddlewareResult<crate::crypto::Signature> {
-        self.signer.sign_transaction(tx).map_err(MiddlewareError::SignerError)
+    fn sign_transaction(&self, tx: &CreateTransactionRequest) -> Result<crate::crypto::Signature, Error> {
+        self.signer.sign_transaction(tx)
+    }
+
+    fn sign(&self, data: &[u8]) -> Result<crate::crypto::Signature, Error> {
+        Ok(self.signer.sign(data))
     }
 }

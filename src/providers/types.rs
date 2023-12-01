@@ -1,13 +1,37 @@
-use serde::Deserialize;
+use std::fmt::Display;
+
+use serde::{Deserialize, Serializer};
 use serde_aux::field_attributes::deserialize_number_from_string;
 
-use crate::crypto::ZilAddress;
+use crate::{crypto::ZilAddress, transaction::Version};
 
 #[derive(Deserialize, Debug)]
 pub struct BalanceResponse {
     pub nonce: u64,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub balance: u128,
+}
+
+#[derive(serde::Serialize, Default, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateTransactionRequest {
+    pub version: Version,
+    pub nonce: u64,
+    pub to_addr: ZilAddress,
+    #[serde(serialize_with = "to_str")]
+    pub amount: u128,
+    pub pub_key: Option<String>,
+    #[serde(serialize_with = "to_str")]
+    pub gas_price: u128,
+    #[serde(serialize_with = "to_str")]
+    pub gas_limit: u64,
+    pub code: Option<String>,
+    pub data: Option<String>,
+    pub signature: Option<String>,
+}
+
+pub fn to_str<S: Serializer, T: Display>(data: T, serializer: S) -> Result<S::Ok, S::Error> {
+    serializer.serialize_str(&data.to_string())
 }
 
 #[derive(Deserialize, Debug)]
@@ -197,7 +221,7 @@ pub struct ShardInfo {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct TransactionObj {
+pub struct GetTransactionResponse {
     #[serde(rename = "ID")]
     pub id: String,
     pub version: String,
@@ -214,11 +238,11 @@ pub struct TransactionObj {
     pub signature: String,
     #[serde(rename = "senderPubKey")]
     pub sender_pub_key: String,
-    pub receipt: TransactionReceiptObj,
+    pub receipt: TransactionReceipt,
 }
 
-#[derive(Deserialize, Debug)]
-pub struct TransactionReceiptObj {
+#[derive(Deserialize, Debug, Default)]
+pub struct TransactionReceipt {
     pub accepted: Option<bool>,
     pub cumulative_gas: String,
     pub epoch_num: String,
@@ -230,16 +254,55 @@ pub struct TransactionReceiptObj {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct TransactionStatus {
+    #[serde(rename = "ID")]
+    pub id: String,
+    pub _id: StatusID,
+    pub amount: String,
+    #[serde(rename = "epochInserted")]
+    pub epoch_inserted: String,
+    #[serde(rename = "epochUpdated")]
+    pub epoch_updated: String,
+    #[serde(rename = "gasLimit")]
+    pub gas_limit: String,
+    #[serde(rename = "gasPrice")]
+    pub gas_price: String,
+    #[serde(rename = "lastModified")]
+    pub last_modified: String,
+    #[serde(rename = "modificationState")]
+    pub modification_state: u32,
+    pub nonce: String,
+    #[serde(rename = "senderAddr")]
+    pub sender_addr: String,
+    pub signature: String,
+    pub status: u32,
+    pub success: bool,
+    #[serde(rename = "toAddr")]
+    pub to_addr: String,
+    pub version: String,
+    //   statusMessage: String, // TODO: Fill it like zilliqa-js
+}
+
+#[derive(Deserialize, Debug)]
+pub struct StatusID {
+    #[serde(rename = "$oid")]
+    pub id: String,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct EventLogEntry {
     pub address: String,
     pub _eventname: String,
     pub params: Vec<EventParam>,
 }
 
+// TODO: DRY, This struct is like contract::Value
 #[derive(Deserialize, Debug)]
 pub struct EventParam {
     pub vname: String,
-    pub _type: String,
+
+    #[serde(rename = "type")]
+    pub r#type: String,
     pub value: String,
 }
 
@@ -272,7 +335,7 @@ pub struct TxnBodiesForTxBlockEx {
     #[serde(rename = "NumPages")]
     pub num_pages: u32,
     #[serde(rename = "Transactions")]
-    pub transactions: Vec<TransactionObj>,
+    pub transactions: Vec<GetTransactionResponse>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -283,4 +346,17 @@ pub struct TransactionsForTxBlockEx {
     pub num_pages: u32,
     #[serde(rename = "Transactions")]
     pub transactions: Vec<Vec<String>>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct SmartContractCode {
+    pub code: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct SmartContracts(Vec<SmartContractAddress>);
+
+#[derive(Deserialize, Debug)]
+pub struct SmartContractAddress {
+    pub address: ZilAddress,
 }

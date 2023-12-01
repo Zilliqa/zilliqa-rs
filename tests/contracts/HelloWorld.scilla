@@ -19,7 +19,7 @@ let set_hello_code = Int32 2
 contract HelloWorld
 (owner: ByStr20)
 
-field welcome_msg : String = ""
+field welcome_msg : String = "Hello world!"
 
 transition setHello (msg : String)
     is_owner = builtin eq owner _sender;

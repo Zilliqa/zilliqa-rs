@@ -1,5 +1,6 @@
 use claim::assert_ok;
 use paste::paste;
+use zilliqa_rs::crypto::ZilAddress;
 use zilliqa_rs::middlewares::Middleware;
 use zilliqa_rs::providers::{Http, Provider};
 
@@ -30,6 +31,15 @@ macro_rules! rpc_method_test {
                 async fn [<$rpc_method:snake _should_work_fine>]() {
                 let provider = Provider::<Http>::try_from(END_POINT).unwrap();
                 assert_ok!(provider.[<$rpc_method:snake>]($param1, $param2).await);
+            }
+        }
+    };
+    ($rpc_method:expr, $param1:expr, $param2:expr, $param3:expr) => {
+        paste! {
+            #[tokio::test]
+                async fn [<$rpc_method:snake _should_work_fine>]() {
+                let provider = Provider::<Http>::try_from(END_POINT).unwrap();
+                assert_ok!(provider.[<$rpc_method:snake>]($param1, $param2, $param3).await);
             }
         }
     };
@@ -75,4 +85,46 @@ rpc_method_test!(GetTxnBodiesForTxBlockEx, "3357911", "0");
 rpc_method_test!(GetNumTxnsTxEpoch, "1");
 rpc_method_test!(GetNumTxnsDsEpoch, "1");
 rpc_method_test!(GetMinimumGasPrice);
-rpc_method_test_ignored!(GetContractAddressFromTransactionID, "not implemented");
+rpc_method_test!(
+    GetTransactionStatus,
+    "d95f28e4585220fb2f368cfa4ddcc0890b7ac0a90a3e8735ab29aeaf554f9f66"
+);
+
+rpc_method_test!(
+    GetTransaction,
+    "d95f28e4585220fb2f368cfa4ddcc0890b7ac0a90a3e8735ab29aeaf554f9f66"
+);
+
+rpc_method_test!(
+    GetContractAddressFromTransactionId,
+    "5592035396c7a5b160dbe99e0634a315e0f5fbd07366a4c1785836803ed96b9c"
+);
+
+rpc_method_test!(
+    GetSmartContractCode,
+    &"988d047d9224412f76e61568f80016f8880ea898".parse::<ZilAddress>().unwrap()
+);
+
+rpc_method_test!(
+    GetSmartContracts,
+    &"zil1fxxz8dfk2t693eum4q3d5pmy3nwp5asysx27lm".parse::<ZilAddress>().unwrap()
+);
+
+rpc_method_test!(
+    GetSmartContractInit,
+    &"988d047d9224412f76e61568f80016f8880ea898".parse::<ZilAddress>().unwrap()
+);
+
+rpc_method_test!(
+    GetSmartContractState,
+    &"988d047d9224412f76e61568f80016f8880ea898".parse::<ZilAddress>().unwrap()
+);
+
+rpc_method_test!(
+    GetSmartContractSubState,
+    &"988d047d9224412f76e61568f80016f8880ea898".parse::<ZilAddress>().unwrap(),
+    "config_bystr20",
+    &["cookie_jar_v1"]
+);
+
+rpc_method_test_ignored!(GetStateProof, "Add a test with proper parameters to the API");

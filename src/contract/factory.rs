@@ -1,8 +1,13 @@
 use std::{path::Path, sync::Arc};
 
-use crate::{crypto::ZilAddress, middlewares::Middleware, transaction::TransactionBuilder};
+use crate::{
+    crypto::ZilAddress,
+    middlewares::Middleware,
+    transaction::{TransactionBuilder, TransactionParams},
+    Error,
+};
 
-use super::{error::ContractResult, Contract, Init};
+use super::{BaseContract, Init};
 
 pub struct Factory<T: Middleware> {
     client: Arc<T>,
@@ -13,21 +18,37 @@ impl<T: Middleware> Factory<T> {
         Self { client }
     }
 
-    pub async fn deploy_from_file(&self, path: &Path, init: Init) -> ContractResult<Contract> {
-        let contract_str = std::fs::read_to_string(path)?;
+    pub async fn deploy_from_file(
+        &self,
+        path: &Path,
+        init: Init,
+        overridden_params: Option<TransactionParams>,
+    ) -> Result<BaseContract<T>, Error> {
+        let contract_code = std::fs::read_to_string(path)?;
+        self.deploy_str(contract_code, init, overridden_params).await
+    }
 
-        let tx = TransactionBuilder::default()
+    pub async fn deploy_str(
+        &self,
+        contract_code: String,
+        init: Init,
+        overridden_params: Option<TransactionParams>,
+    ) -> Result<BaseContract<T>, Error> {
+        let tx = overridden_params
+            .map(TransactionBuilder::from)
+            .unwrap_or_default()
             .to_address(ZilAddress::nil())
-            .amount(0u128)
-            .code(contract_str)
+            .amount_if_none(0u128)
+            .code(contract_code)
             .data(serde_json::to_string(&init)?)
-            .gas_price(2000000000u128)
-            .gas_limit(10000u64)
+            .gas_price_if_none(2000000000u128)
+            .gas_limit_if_none(10000u64)
             .build();
 
         let response = self.client.deploy_contract(tx).await?;
-        Ok(Contract {
+        Ok(BaseContract {
             address: response.contract_address,
+            client: self.client.clone(),
         })
     }
 }

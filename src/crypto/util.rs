@@ -3,36 +3,23 @@ use std::ops::BitAnd;
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 use sha2::Digest;
 
-use crate::util::validation::{is_address, is_private_key};
+use crate::{
+    util::validation::{is_address, is_private_key},
+    Error,
+};
 
-use super::error::CryptoError;
-
-// export const verifyPrivateKey = (privateKey: string): boolean => {
-//   const keyPair = secp256k1.keyFromPrivate(privateKey, "hex");
-//   const { result } = keyPair.validate();
-//   return result;
-// };
-pub fn verify_private_key(_private_key: &str) -> bool {
-    // TODO: Implement this function
-    true
-}
-
-pub fn normalize_private_key(private_key: &str) -> Result<String, CryptoError> {
+pub fn normalize_private_key(private_key: &str) -> Result<String, Error> {
     if !is_private_key(private_key) {
-        return Err(CryptoError::IncorrectPrivateKey);
+        return Err(Error::IncorrectPrivateKey);
     }
 
     // TODO: Consider performance here
     let normalized = private_key.to_lowercase().replace("0x", "");
 
-    if !verify_private_key(private_key) {
-        return Err(CryptoError::UnverifiedPrivateKey);
-    }
-
     Ok(normalized)
 }
 
-pub fn get_pub_key_from_private_key(private_key: &str) -> Result<String, CryptoError> {
+pub fn get_pub_key_from_private_key(private_key: &str) -> Result<String, Error> {
     let private_key = normalize_private_key(private_key)?;
     let secp = Secp256k1::new();
     let secret_key = SecretKey::from_slice(&hex::decode(private_key)?)?;
@@ -40,7 +27,7 @@ pub fn get_pub_key_from_private_key(private_key: &str) -> Result<String, CryptoE
     Ok(public_key.to_string())
 }
 
-pub fn get_address_from_public_key(public_key: &str) -> Result<String, CryptoError> {
+pub fn get_address_from_public_key(public_key: &str) -> Result<String, Error> {
     let normalized = public_key.to_lowercase().replace("0x", "");
 
     let mut hasher = sha2::Sha256::new();
@@ -48,10 +35,10 @@ pub fn get_address_from_public_key(public_key: &str) -> Result<String, CryptoErr
     to_checksum_address(&hex::encode(hasher.finalize())[24..])
 }
 
-pub fn to_checksum_address(address: &str) -> Result<String, CryptoError> {
+pub fn to_checksum_address(address: &str) -> Result<String, Error> {
     let address = address.replace("0x", "");
     if !is_address(&address) {
-        return Err(CryptoError::InvalidAddress(address.to_string()));
+        return Err(Error::InvalidAddress(address.to_string()));
     }
 
     let mut hasher = sha2::Sha256::new();
@@ -79,7 +66,7 @@ pub fn to_checksum_address(address: &str) -> Result<String, CryptoError> {
     Ok(format!("0x{}", ret))
 }
 
-pub fn is_valid_checksum_address(address: &str) -> Result<bool, CryptoError> {
+pub fn is_valid_checksum_address(address: &str) -> Result<bool, Error> {
     Ok(to_checksum_address(address)? == address)
 }
 
