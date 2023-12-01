@@ -7,10 +7,9 @@ use prost::Message;
 use crate::{
     crypto::{generate_private_key, schnorr::sign, PrivateKey, PublicKey, ZilAddress},
     proto::{Nonce, ProtoTransactionCoreInfo},
-    transaction::Transaction,
+    providers::CreateTransactionRequest,
+    Error,
 };
-
-use super::error::{SignerError, SignerResult};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct LocalWallet {
@@ -19,14 +18,14 @@ pub struct LocalWallet {
 }
 
 impl LocalWallet {
-    pub fn new(private_key: &str) -> SignerResult<Self> {
+    pub fn new(private_key: &str) -> Result<Self, Error> {
         let private_key = private_key.parse::<PrivateKey>()?;
         let address = ZilAddress::try_from(&private_key.public_key())?;
 
         Ok(Self { private_key, address })
     }
 
-    pub fn create_random() -> SignerResult<Self> {
+    pub fn create_random() -> Result<Self, Error> {
         let private_key = generate_private_key();
         Self::new(&private_key)
     }
@@ -39,7 +38,7 @@ impl LocalWallet {
         self.private_key.public_key()
     }
 
-    pub fn sign_transaction(&self, tx: &Transaction) -> SignerResult<Signature> {
+    pub fn sign_transaction(&self, tx: &CreateTransactionRequest) -> Result<Signature, Error> {
         let to_addr: H160 = tx.to_addr.parse().unwrap();
 
         let proto = ProtoTransactionCoreInfo {
@@ -50,8 +49,9 @@ impl LocalWallet {
             gasprice: Some(tx.gas_price.to_be_bytes().to_vec().into()),
             gaslimit: tx.gas_limit,
             oneof2: Some(Nonce::Nonce(tx.nonce)),
-            oneof8: Some(crate::proto::Code::Code(tx.code.as_bytes().to_vec())),
-            oneof9: Some(crate::proto::Data::Data(tx.data.as_bytes().to_vec())),
+            //TODO: Remove clones
+            oneof8: tx.code.clone().map(|code| crate::proto::Code::Code(code.as_bytes().to_vec())),
+            oneof9: tx.data.clone().map(|data| crate::proto::Data::Data(data.as_bytes().to_vec())),
         };
 
         let txn_data = proto.encode_to_vec();
@@ -60,7 +60,7 @@ impl LocalWallet {
 }
 
 impl FromStr for LocalWallet {
-    type Err = SignerError;
+    type Err = Error;
 
     fn from_str(private_key: &str) -> Result<Self, Self::Err> {
         Self::new(private_key)

@@ -2,7 +2,8 @@ use std::fmt::Display;
 use std::ops::Deref;
 use std::str::FromStr;
 
-use super::error::CryptoError;
+use crate::Error;
+
 use super::PublicKey;
 
 #[derive(Debug, Clone)]
@@ -15,7 +16,7 @@ impl PrivateKey {
 }
 
 impl FromStr for PrivateKey {
-    type Err = CryptoError;
+    type Err = Error;
 
     fn from_str(secret_key: &str) -> Result<Self, Self::Err> {
         let secret_key = match secret_key.strip_prefix("0x") {

@@ -1,15 +1,16 @@
 use bech32::{FromBase32, ToBase32, Variant};
+use serde::{Deserialize, Deserializer};
 use sha2::Digest;
 use std::{fmt::Display, ops::Deref, str::FromStr};
 
-use crate::util::validation::{is_address, is_bech32};
-
-use super::{
-    error::{CryptoError, CryptoResult},
-    to_checksum_address, PublicKey,
+use crate::{
+    util::validation::{is_address, is_bech32},
+    Error,
 };
 
-#[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize, Default)]
+use super::{to_checksum_address, PublicKey};
+
+#[derive(Debug, PartialEq, Clone, serde::Serialize, Default)]
 pub struct ZilAddress(String);
 
 impl Deref for ZilAddress {
@@ -21,7 +22,7 @@ impl Deref for ZilAddress {
 }
 
 impl TryFrom<&PublicKey> for ZilAddress {
-    type Error = CryptoError;
+    type Error = Error;
 
     fn try_from(value: &PublicKey) -> Result<Self, Self::Error> {
         let mut hasher = sha2::Sha256::new();
@@ -31,7 +32,7 @@ impl TryFrom<&PublicKey> for ZilAddress {
 }
 
 impl ZilAddress {
-    fn from_bech32(address: &str) -> CryptoResult<Self> {
+    fn from_bech32(address: &str) -> Result<Self, Error> {
         let (_hrp, data, _) = bech32::decode(address)?;
 
         let address = hex::encode(Vec::<u8>::from_base32(&data).unwrap());
@@ -39,7 +40,7 @@ impl ZilAddress {
         Ok(Self(to_checksum_address(&address)?))
     }
 
-    pub fn to_bech32(&self) -> CryptoResult<String> {
+    pub fn to_bech32(&self) -> Result<String, Error> {
         let address = self.0.strip_prefix("0x").unwrap(); // Safe to call unwrap, we create addresses with 0x prefixed
 
         Ok(bech32::encode("zil", hex::decode(address)?.to_base32(), Variant::Bech32)?)
@@ -51,7 +52,7 @@ impl ZilAddress {
 }
 
 impl FromStr for ZilAddress {
-    type Err = CryptoError;
+    type Err = Error;
 
     fn from_str(addr: &str) -> Result<Self, Self::Err> {
         if is_address(addr) {
@@ -59,7 +60,7 @@ impl FromStr for ZilAddress {
         } else if is_bech32(addr) {
             Self::from_bech32(addr)
         } else {
-            Err(CryptoError::InvalidAddress(addr.to_string()))
+            Err(Error::InvalidAddress(addr.to_string()))
         }
     }
 }
@@ -105,5 +106,17 @@ mod tests {
 
         let zil_addr: ZilAddress = address.parse().unwrap();
         assert_eq!(zil_addr.to_bech32().unwrap(), bech32_address);
+    }
+}
+
+impl<'de> Deserialize<'de> for ZilAddress {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: &str = Deserialize::deserialize(deserializer)?;
+
+        // TODO: Remove unwrap
+        Ok(s.parse::<Self>().unwrap())
     }
 }

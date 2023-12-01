@@ -1,6 +1,6 @@
 use std::{fmt::Display, ops::Deref, str::FromStr};
 
-use super::error::CryptoError;
+use crate::Error;
 
 pub struct PublicKey(k256::PublicKey);
 
@@ -11,7 +11,7 @@ impl PublicKey {
 }
 
 impl FromStr for PublicKey {
-    type Err = CryptoError;
+    type Err = Error;
 
     fn from_str(public_key: &str) -> Result<Self, Self::Err> {
         let public_key = match public_key.strip_prefix("0x") {

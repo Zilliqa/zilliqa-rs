@@ -1,12 +1,12 @@
 use crate::{
-    crypto::Signature,
+    contract::Init,
+    crypto::{Signature, ZilAddress},
     providers::{types::*, JsonRpcClient, Provider},
-    transaction::Transaction,
+    util::validation::is_tx_hash,
+    Error,
 };
 use async_trait::async_trait;
 use serde::de::DeserializeOwned;
-
-use super::MiddlewareResult;
 
 #[async_trait]
 pub trait Middleware: Sync + Send + std::fmt::Debug {
@@ -23,154 +23,210 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
         self.inner().provider()
     }
 
-    // /// Returns the currently configured chain id, a value used in replay-protected
-    // /// transaction signing as introduced by EIP-155.
-    // /// This returns true if either the middleware stack contains a `SignerMiddleware`, or the
-    // /// JSON-RPC provider has an unlocked key that can sign using the `eth_sign` call. If none of
-    // /// the above conditions are met, then the middleware stack is not capable of signing data.
     fn is_signer(&self) -> bool {
         self.inner().is_signer()
     }
 
-    // /// Signs data using a specific account. This account needs to be unlocked,
-    // /// or the middleware stack must contain a `SignerMiddleware`
-    // async fn sign<T: Into<Bytes> + Send + Sync>(&self, data: T, from: &Address) -> Result<Signature, Self::Error> {
-    //     self.inner().sign(data, from).await.map_err(MiddlewareError::from_err)
-    // }
     fn get_chainid(&self) -> u16 {
         self.inner().get_chainid()
     }
 
-    async fn deploy_contract(&self, tx: Transaction) -> MiddlewareResult<DeployContractResponse> {
-        self.send_transaction::<DeployContractResponse>(tx).await
+    async fn deploy_contract(&self, tx: CreateTransactionRequest) -> Result<DeployContractResponse, Error> {
+        self.send_transaction_without_confirm::<DeployContractResponse>(tx).await
     }
 
-    async fn send_transaction<T: Send + DeserializeOwned>(&self, tx: Transaction) -> MiddlewareResult<T> {
-        self.inner().send_transaction(tx).await
+    /// If there is any signer middleware, will sign it first and then send it.
+    async fn send_transaction_without_confirm<T: Send + DeserializeOwned>(
+        &self,
+        tx: CreateTransactionRequest,
+    ) -> Result<T, Error> {
+        self.inner().send_transaction_without_confirm(tx).await
     }
 
-    fn sign_transaction(&self, tx: &Transaction) -> MiddlewareResult<Signature> {
+    fn sign(&self, data: &[u8]) -> Result<Signature, Error> {
+        self.inner().sign(data)
+    }
+
+    fn sign_transaction(&self, tx: &CreateTransactionRequest) -> Result<Signature, Error> {
         self.inner().sign_transaction(tx)
     }
 
-    async fn create_transaction<T: Send + DeserializeOwned>(&self, tx: Transaction) -> MiddlewareResult<T> {
+    /// Directly calls CreateTransaction JSON-RPC endpoint.
+    async fn create_transaction<T: Send + DeserializeOwned>(&self, tx: CreateTransactionRequest) -> Result<T, Error> {
         self.inner().create_transaction(tx).await
     }
 
-    async fn get_balance(&self, address: &str) -> MiddlewareResult<BalanceResponse> {
+    async fn get_transaction_status(&self, tx_hash: &str) -> Result<TransactionStatus, Error> {
+        if !is_tx_hash(tx_hash) {
+            return Err(Error::InvalidTransactionHash(tx_hash.to_string()));
+        }
+
+        self.inner().get_transaction_status(tx_hash).await
+    }
+
+    async fn get_transaction(&self, tx_hash: &str) -> Result<GetTransactionResponse, Error> {
+        if !is_tx_hash(tx_hash) {
+            return Err(Error::InvalidTransactionHash(tx_hash.to_string()));
+        }
+
+        self.inner().get_transaction(tx_hash).await
+    }
+
+    async fn get_balance(&self, address: &str) -> Result<BalanceResponse, Error> {
         self.inner().get_balance(address).await
     }
 
-    async fn get_ds_block(&self, lock_num: &str) -> MiddlewareResult<DsBlock> {
+    async fn get_ds_block(&self, lock_num: &str) -> Result<DsBlock, Error> {
         self.inner().get_ds_block(lock_num).await
     }
 
-    async fn ds_block_listing(&self, max: u32) -> MiddlewareResult<BlockList> {
+    async fn ds_block_listing(&self, max: u32) -> Result<BlockList, Error> {
         self.inner().ds_block_listing(max).await
     }
-    async fn get_tx_block(&self, block_num: &str) -> MiddlewareResult<TxBlock> {
+    async fn get_tx_block(&self, block_num: &str) -> Result<TxBlock, Error> {
         self.inner().get_tx_block(block_num).await
     }
-    async fn tx_block_listing(&self, max: u32) -> MiddlewareResult<BlockList> {
+    async fn tx_block_listing(&self, max: u32) -> Result<BlockList, Error> {
         self.inner().tx_block_listing(max).await
     }
-    async fn get_miner_info(&self, ds_block_number: &str) -> MiddlewareResult<MinerInfo> {
+    async fn get_miner_info(&self, ds_block_number: &str) -> Result<MinerInfo, Error> {
         self.inner().get_miner_info(ds_block_number).await
     }
 
-    async fn get_blockchain_info(&self) -> MiddlewareResult<BlockchainInfo> {
+    async fn get_blockchain_info(&self) -> Result<BlockchainInfo, Error> {
         self.inner().get_blockchain_info().await
     }
 
-    async fn get_sharding_structure(&self) -> MiddlewareResult<ShardingStructure> {
+    async fn get_sharding_structure(&self) -> Result<ShardingStructure, Error> {
         self.inner().get_sharding_structure().await
     }
 
-    async fn get_latest_ds_block(&self) -> MiddlewareResult<DsBlock> {
+    async fn get_latest_ds_block(&self) -> Result<DsBlock, Error> {
         self.inner().get_latest_ds_block().await
     }
 
-    async fn get_num_ds_blocks(&self) -> MiddlewareResult<String> {
+    async fn get_num_ds_blocks(&self) -> Result<String, Error> {
         self.inner().get_num_ds_blocks().await
     }
 
-    async fn get_ds_block_rate(&self) -> MiddlewareResult<f32> {
+    async fn get_ds_block_rate(&self) -> Result<f32, Error> {
         self.inner().get_ds_block_rate().await
     }
 
-    async fn get_latest_tx_block(&self) -> MiddlewareResult<TxBlock> {
+    async fn get_latest_tx_block(&self) -> Result<TxBlock, Error> {
         self.inner().get_latest_tx_block().await
     }
 
-    async fn get_num_tx_blocks(&self) -> MiddlewareResult<String> {
+    async fn get_num_tx_blocks(&self) -> Result<String, Error> {
         self.inner().get_num_tx_blocks().await
     }
 
-    async fn get_tx_block_rate(&self) -> MiddlewareResult<f32> {
+    async fn get_tx_block_rate(&self) -> Result<f32, Error> {
         self.inner().get_tx_block_rate().await
     }
 
-    async fn get_num_transactions(&self) -> MiddlewareResult<String> {
+    async fn get_num_transactions(&self) -> Result<String, Error> {
         self.inner().get_num_transactions().await
     }
 
-    async fn get_transaction_rate(&self) -> MiddlewareResult<f32> {
+    async fn get_transaction_rate(&self) -> Result<f32, Error> {
         self.inner().get_transaction_rate().await
     }
 
-    async fn get_current_mini_epoch(&self) -> MiddlewareResult<String> {
+    async fn get_current_mini_epoch(&self) -> Result<String, Error> {
         self.inner().get_current_mini_epoch().await
     }
 
-    async fn get_current_ds_epoch(&self) -> MiddlewareResult<String> {
+    async fn get_current_ds_epoch(&self) -> Result<String, Error> {
         self.inner().get_current_ds_epoch().await
     }
 
-    async fn get_prev_difficulty(&self) -> MiddlewareResult<u32> {
+    async fn get_prev_difficulty(&self) -> Result<u32, Error> {
         self.inner().get_prev_difficulty().await
     }
 
-    async fn get_prev_ds_difficulty(&self) -> MiddlewareResult<u32> {
+    async fn get_prev_ds_difficulty(&self) -> Result<u32, Error> {
         self.inner().get_prev_ds_difficulty().await
     }
 
-    async fn get_total_coin_supply(&self) -> MiddlewareResult<String> {
+    async fn get_total_coin_supply(&self) -> Result<String, Error> {
         self.inner().get_total_coin_supply().await
     }
 
-    async fn get_recent_transactions(&self) -> MiddlewareResult<TxList> {
+    async fn get_recent_transactions(&self) -> Result<TxList, Error> {
         self.inner().get_recent_transactions().await
     }
 
-    async fn get_transactions_for_tx_block(&self, tx_block: &str) -> MiddlewareResult<Vec<Vec<String>>> {
+    async fn get_transactions_for_tx_block(&self, tx_block: &str) -> Result<Vec<Vec<String>>, Error> {
         self.inner().get_transactions_for_tx_block(tx_block).await
     }
 
-    async fn get_txn_bodies_for_tx_block_ex(&self, tx_block: &str, page_num: &str) -> MiddlewareResult<TxnBodiesForTxBlockEx> {
+    async fn get_txn_bodies_for_tx_block_ex(&self, tx_block: &str, page_num: &str) -> Result<TxnBodiesForTxBlockEx, Error> {
         self.inner().get_txn_bodies_for_tx_block_ex(tx_block, page_num).await
     }
 
-    async fn get_txn_bodies_for_tx_block(&self, tx_block: &str) -> MiddlewareResult<Vec<TransactionObj>> {
+    async fn get_txn_bodies_for_tx_block(&self, tx_block: &str) -> Result<Vec<GetTransactionResponse>, Error> {
         self.inner().get_txn_bodies_for_tx_block(tx_block).await
     }
 
-    async fn get_transactions_for_tx_block_ex(
-        &self,
-        tx_block: &str,
-        page_num: &str,
-    ) -> MiddlewareResult<TransactionsForTxBlockEx> {
+    async fn get_transactions_for_tx_block_ex(&self, tx_block: &str, page_num: &str) -> Result<TransactionsForTxBlockEx, Error> {
         self.inner().get_transactions_for_tx_block_ex(tx_block, page_num).await
     }
 
-    async fn get_num_txns_tx_epoch(&self, epoch: &str) -> MiddlewareResult<String> {
+    async fn get_num_txns_tx_epoch(&self, epoch: &str) -> Result<String, Error> {
         self.inner().get_num_txns_tx_epoch(epoch).await
     }
 
-    async fn get_num_txns_ds_epoch(&self, epoch: &str) -> MiddlewareResult<String> {
+    async fn get_num_txns_ds_epoch(&self, epoch: &str) -> Result<String, Error> {
         self.inner().get_num_txns_ds_epoch(epoch).await
     }
 
-    async fn get_minimum_gas_price(&self) -> MiddlewareResult<String> {
+    async fn get_minimum_gas_price(&self) -> Result<String, Error> {
         self.inner().get_minimum_gas_price().await
+    }
+
+    async fn get_smart_contracts(&self, owner: &ZilAddress) -> Result<SmartContracts, Error> {
+        self.inner().get_smart_contracts(owner).await
+    }
+
+    async fn get_contract_address_from_transaction_id(&self, tx_hash: &str) -> Result<String, Error> {
+        if !is_tx_hash(tx_hash) {
+            return Err(Error::InvalidTransactionHash(tx_hash.to_string()));
+        }
+
+        self.inner().get_contract_address_from_transaction_id(tx_hash).await
+    }
+
+    async fn get_smart_contract_code(&self, contract_address: &ZilAddress) -> Result<SmartContractCode, Error> {
+        self.inner().get_smart_contract_code(contract_address).await
+    }
+
+    async fn get_smart_contract_init(&self, contract_address: &ZilAddress) -> Result<Init, Error> {
+        self.inner().get_smart_contract_init(contract_address).await
+    }
+
+    // TODO: What's proper return type?
+    async fn get_smart_contract_state(&self, contract_address: &ZilAddress) -> Result<serde_json::Value, Error> {
+        self.inner().get_smart_contract_state(contract_address).await
+    }
+
+    async fn get_smart_contract_sub_state(
+        &self,
+        contract_address: &ZilAddress,
+        variable_name: &str,
+        indices: &[&str],
+    ) -> Result<serde_json::Value, Error> {
+        self.inner()
+            .get_smart_contract_sub_state(contract_address, variable_name, indices)
+            .await
+    }
+
+    async fn get_state_proof(
+        &self,
+        contract_address: &ZilAddress,
+        hash: &str,
+        tx_block: &str,
+    ) -> Result<serde_json::Value, Error> {
+        self.inner().get_state_proof(contract_address, hash, tx_block).await
     }
 }

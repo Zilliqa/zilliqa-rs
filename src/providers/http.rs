@@ -6,7 +6,9 @@ use jsonrpsee::{
 use serde::de::DeserializeOwned;
 use url::Url;
 
-use super::{error::ProviderError, JsonRpcClient};
+use crate::Error;
+
+use super::JsonRpcClient;
 
 #[derive(Debug)]
 pub struct Provider {
@@ -14,7 +16,7 @@ pub struct Provider {
 }
 
 impl Provider {
-    pub fn new(url: impl Into<Url>) -> Result<Self, ProviderError> {
+    pub fn new(url: impl Into<Url>) -> Result<Self, Error> {
         Ok(Self {
             client: HttpClientBuilder::default().build(url.into())?,
         })
@@ -23,11 +25,7 @@ impl Provider {
 
 #[async_trait]
 impl JsonRpcClient for Provider {
-    async fn request<T: Send + Sync + ToRpcParams, R: DeserializeOwned>(
-        &self,
-        method: &str,
-        params: T,
-    ) -> Result<R, ProviderError> {
-        self.client.request(method, params).await.map_err(ProviderError::JsonRpcError)
+    async fn request<T: Send + Sync + ToRpcParams, R: DeserializeOwned>(&self, method: &str, params: T) -> Result<R, Error> {
+        self.client.request(method, params).await.map_err(Error::JsonRpcError)
     }
 }
