@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::{Serialize, Serializer};
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Clone)]
 pub struct Version {
     msg_version: u16,
     chain_id: u16,
