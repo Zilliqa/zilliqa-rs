@@ -1,2 +1,2 @@
 [env]
-CONTRACTS_PATH = {value = "tests/contracts", force = true}
+CONTRACTS_PATH = {value = "tests/contracts"}
