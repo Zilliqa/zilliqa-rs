@@ -9,3 +9,7 @@ pub mod transaction;
 pub mod util;
 
 pub use error::Error;
+
+#[doc = include_str!("../README.md")]
+#[cfg(doctest)]
+pub struct ReadmeDoctests;

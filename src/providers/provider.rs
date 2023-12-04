@@ -51,7 +51,6 @@ impl<P: JsonRpcClient> Provider<P> {
 
     // TODO: zilliqa-js create_transaction is more complex.
     // TODO: add createBatchTransaction, createTransactionRaw, createTransactionWithoutConfirm
-    // TODO: add getStateProof
 }
 
 impl TryFrom<&str> for Provider<Http> {
