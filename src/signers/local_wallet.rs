@@ -41,12 +41,18 @@ impl LocalWallet {
     pub fn sign_transaction(&self, tx: &CreateTransactionRequest) -> Result<Signature, Error> {
         let to_addr: H160 = tx.to_addr.parse().unwrap();
 
+        let mut amount = [0_u8; 32];
+        tx.amount.to_big_endian(&mut amount);
+
+        let mut gas_price = [0_u8; 32];
+        tx.gas_price.to_big_endian(&mut gas_price);
+
         let proto = ProtoTransactionCoreInfo {
             version: tx.version.pack(),
             toaddr: to_addr.as_bytes().to_vec(),
             senderpubkey: Some(self.private_key.public_key().to_sec1_bytes().into()),
-            amount: Some(tx.amount.to_be_bytes().to_vec().into()),
-            gasprice: Some(tx.gas_price.to_be_bytes().to_vec().into()),
+            amount: Some(amount.to_vec().into()),
+            gasprice: Some(gas_price.to_vec().into()),
             gaslimit: tx.gas_limit,
             oneof2: Some(Nonce::Nonce(tx.nonce)),
             //TODO: Remove clones

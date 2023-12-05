@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use primitive_types::U256;
 use serde::{Deserialize, Serializer};
 use serde_aux::field_attributes::deserialize_number_from_string;
 
@@ -19,10 +20,10 @@ pub struct CreateTransactionRequest {
     pub nonce: u64,
     pub to_addr: ZilAddress,
     #[serde(serialize_with = "to_str")]
-    pub amount: u128,
+    pub amount: U256,
     pub pub_key: Option<String>,
     #[serde(serialize_with = "to_str")]
-    pub gas_price: u128,
+    pub gas_price: U256,
     #[serde(serialize_with = "to_str")]
     pub gas_limit: u64,
     pub code: Option<String>,

@@ -7,6 +7,7 @@ use zilliqa_rs::{
     providers::{CreateTransactionResponse, Http, Provider},
     signers::LocalWallet,
     transaction::{Transaction, TransactionBuilder, Version},
+    util::parse_zil,
     Error,
 };
 
@@ -27,8 +28,8 @@ async fn send_transaction() -> Result<()> {
     let receiver = LocalWallet::create_random()?;
     let tx = TransactionBuilder::default()
         .to_address(receiver.address.clone())
-        .amount(200u128 * 10u128.pow(12))
-        .gas_price(2000000000u128)
+        .amount(parse_zil("2")?)
+        .gas_price(parse_zil("0.002")?)
         .gas_limit(50u64)
         .build();
 
@@ -55,8 +56,8 @@ async fn if_version_is_not_set_create_transaction_should_return_error() -> Resul
     let receiver = LocalWallet::create_random()?;
     let tx = TransactionBuilder::default()
         .to_address(receiver.address)
-        .amount(200u128 * 10u128.pow(12))
-        .gas_price(2000000000u128)
+        .amount(parse_zil("2")?)
+        .gas_price(parse_zil("0.002")?)
         .gas_limit(50u64)
         .build();
 
@@ -84,7 +85,7 @@ async fn send_zil_using_pay_function() -> Result<()> {
     assert_gt!(sender_balance.balance, 200u128);
 
     let receiver = LocalWallet::create_random()?;
-    let amount = 200u128 * 10u128.pow(12);
+    let amount = parse_zil("2")?;
 
     let tx = TransactionBuilder::default().pay(amount, receiver.address.clone()).build();
     provider.send_transaction_without_confirm(tx).await?;
@@ -111,7 +112,7 @@ async fn get_transaction_receipt() -> Result<()> {
     println!("{sender_balance:?}");
 
     let receiver = LocalWallet::create_random()?;
-    let amount = 2u128 * 10u128.pow(12);
+    let amount = parse_zil("2")?;
 
     let tx = TransactionBuilder::default().pay(amount, receiver.address.clone()).build();
     let res = provider

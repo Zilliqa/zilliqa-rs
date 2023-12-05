@@ -1,4 +1,6 @@
-use crate::{crypto::ZilAddress, providers::CreateTransactionRequest};
+use primitive_types::U256;
+
+use crate::{crypto::ZilAddress, providers::CreateTransactionRequest, util::parse_zil};
 
 use super::Version;
 
@@ -7,9 +9,9 @@ pub struct TransactionParams {
     pub version: Option<Version>,
     pub nonce: Option<u64>,
     pub to_addr: Option<ZilAddress>,
-    pub amount: Option<u128>,
+    pub amount: Option<U256>,
     pub pub_key: Option<String>,
-    pub gas_price: Option<u128>,
+    pub gas_price: Option<U256>,
     pub gas_limit: Option<u64>,
     pub code: Option<String>,
     pub data: Option<String>,
@@ -22,10 +24,11 @@ pub struct TransactionBuilder {
 }
 
 impl TransactionBuilder {
-    pub fn pay(mut self, amount: u128, to_addr: ZilAddress) -> Self {
+    pub fn pay(mut self, amount: U256, to_addr: ZilAddress) -> Self {
         self.inner_transaction.amount = Some(amount);
         self.inner_transaction.to_addr = Some(to_addr);
-        self.gas_price_if_none(2000000000u128).gas_limit_if_none(50u64)
+        // TODO: Do we need to handle error here?
+        self.gas_price_if_none(parse_zil("0.002").unwrap()).gas_limit_if_none(50u64)
     }
 
     pub fn chain_id(mut self, chain_id: u16) -> Self {
@@ -43,12 +46,12 @@ impl TransactionBuilder {
         self
     }
 
-    pub fn amount(mut self, amount: u128) -> Self {
+    pub fn amount(mut self, amount: U256) -> Self {
         self.inner_transaction.amount = Some(amount);
         self
     }
 
-    pub fn amount_if_none(mut self, amount: u128) -> Self {
+    pub fn amount_if_none(mut self, amount: U256) -> Self {
         if self.inner_transaction.amount.is_some() {
             return self;
         }
@@ -57,12 +60,12 @@ impl TransactionBuilder {
         self
     }
 
-    pub fn gas_price(mut self, gas_price: u128) -> Self {
+    pub fn gas_price(mut self, gas_price: U256) -> Self {
         self.inner_transaction.gas_price = Some(gas_price);
         self
     }
 
-    pub fn gas_price_if_none(mut self, gas_price: u128) -> Self {
+    pub fn gas_price_if_none(mut self, gas_price: U256) -> Self {
         if self.inner_transaction.gas_price.is_some() {
             return self;
         }

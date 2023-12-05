@@ -1,3 +1,4 @@
+use ethers_core::utils::ConversionError;
 use thiserror::Error as ThisError;
 
 use crate::transaction::Version;
@@ -28,6 +29,9 @@ pub enum Error {
     #[error("Neither a pubkey nor a default account is provided")]
     NeitherPubKeyNorDefaultAccountProvided,
 
+    #[error("Unknown units: {0}")]
+    UnrecognizedUnits(String),
+
     #[error(transparent)]
     JsonRpcError(#[from] jsonrpsee::core::Error),
 
@@ -51,4 +55,7 @@ pub enum Error {
 
     #[error(transparent)]
     IoError(#[from] std::io::Error),
+
+    #[error(transparent)]
+    EthersConversionError(#[from] ConversionError),
 }
