@@ -2,6 +2,7 @@ use std::{fmt::Display, ops::Deref, str::FromStr};
 
 use crate::Error;
 
+#[derive(Debug, Clone)]
 pub struct PublicKey(k256::PublicKey);
 
 impl PublicKey {
