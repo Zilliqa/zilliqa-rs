@@ -1,4 +1,4 @@
-use crate::{crypto::ZilAddress, providers::CreateTransactionRequest};
+use crate::{crypto::ZilAddress, providers::CreateTransactionRequest, util::parse_zil};
 
 use super::Version;
 
@@ -25,7 +25,8 @@ impl TransactionBuilder {
     pub fn pay(mut self, amount: u128, to_addr: ZilAddress) -> Self {
         self.inner_transaction.amount = Some(amount);
         self.inner_transaction.to_addr = Some(to_addr);
-        self.gas_price_if_none(2000000000u128).gas_limit_if_none(50u64)
+        // TODO: Do we need to handle error here?
+        self.gas_price_if_none(parse_zil("0.002").unwrap()).gas_limit_if_none(50u64)
     }
 
     pub fn chain_id(mut self, chain_id: u16) -> Self {

@@ -3,6 +3,7 @@ use zilliqa_rs::{
     providers::{Http, Provider},
     signers::LocalWallet,
     transaction::TransactionBuilder,
+    util::parse_zil,
 };
 
 // TODO: Make it a real test
@@ -15,8 +16,8 @@ async fn test_with_signer_middleware() -> Result<(), Box<dyn std::error::Error>>
 
     let tx = TransactionBuilder::default()
         .to_address("0xf6dad9e193fa2959a849b81caf9cb6ecde466771".parse()?)
-        .amount(200u128 * 10u128.pow(12))
-        .gas_price(2000000000u128)
+        .amount(parse_zil("2")?)
+        .gas_price(parse_zil("0.002")?)
         .gas_limit(50u64)
         .build();
 

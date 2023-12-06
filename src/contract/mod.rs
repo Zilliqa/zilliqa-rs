@@ -9,6 +9,7 @@ use crate::{
     middlewares::Middleware,
     providers::{CreateTransactionResponse, GetTransactionResponse},
     transaction::TransactionBuilder,
+    util::parse_zil,
     Error,
 };
 
@@ -64,7 +65,7 @@ impl<T: Middleware> BaseContract<T> {
         let tx = TransactionBuilder::default()
             .to_address(self.address.clone())
             // TODO: Consider gas price, amount values
-            .gas_price(2000000000u128)
+            .gas_price(parse_zil("0.002")?)
             .gas_limit(10000u64)
             .data(serde_json::to_string(&Transition {
                 tag: transition.to_string(),

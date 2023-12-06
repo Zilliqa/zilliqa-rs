@@ -4,6 +4,7 @@ use crate::{
     crypto::ZilAddress,
     middlewares::Middleware,
     transaction::{TransactionBuilder, TransactionParams},
+    util::parse_zil,
     Error,
 };
 
@@ -38,10 +39,10 @@ impl<T: Middleware> Factory<T> {
             .map(TransactionBuilder::from)
             .unwrap_or_default()
             .to_address(ZilAddress::nil())
-            .amount_if_none(0u128)
+            .amount_if_none(0_u128)
             .code(contract_code)
             .data(serde_json::to_string(&init)?)
-            .gas_price_if_none(2000000000u128)
+            .gas_price_if_none(parse_zil("0.002")?)
             .gas_limit_if_none(10000u64)
             .build();
 
