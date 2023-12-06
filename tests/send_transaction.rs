@@ -92,7 +92,7 @@ async fn send_zil_using_pay_function() -> Result<()> {
 
     let res = provider.get_balance(&receiver.address).await?;
 
-    assert_gt!(res.balance, 200u128);
+    assert_gt!(res.balance, 200_u128);
 
     Ok(())
 }

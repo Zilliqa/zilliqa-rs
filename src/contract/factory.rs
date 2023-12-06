@@ -1,7 +1,5 @@
 use std::{path::Path, sync::Arc};
 
-use primitive_types::U256;
-
 use crate::{
     crypto::ZilAddress,
     middlewares::Middleware,
@@ -41,7 +39,7 @@ impl<T: Middleware> Factory<T> {
             .map(TransactionBuilder::from)
             .unwrap_or_default()
             .to_address(ZilAddress::nil())
-            .amount_if_none(U256::zero())
+            .amount_if_none(0_u128)
             .code(contract_code)
             .data(serde_json::to_string(&init)?)
             .gas_price_if_none(parse_zil("0.002")?)

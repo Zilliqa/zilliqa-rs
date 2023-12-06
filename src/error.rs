@@ -1,4 +1,5 @@
-use ethers_core::utils::ConversionError;
+use std::num::ParseIntError;
+
 use thiserror::Error as ThisError;
 
 use crate::transaction::Version;
@@ -32,6 +33,12 @@ pub enum Error {
     #[error("Unknown units: {0}")]
     UnrecognizedUnits(String),
 
+    #[error("Negative values are not allowed")]
+    NegativeValueNotAllowed,
+
+    #[error("Parse overflow")]
+    ParseOverflow,
+
     #[error(transparent)]
     JsonRpcError(#[from] jsonrpsee::core::Error),
 
@@ -57,5 +64,5 @@ pub enum Error {
     IoError(#[from] std::io::Error),
 
     #[error(transparent)]
-    EthersConversionError(#[from] ConversionError),
+    ParseIntError(#[from] ParseIntError),
 }

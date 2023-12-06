@@ -3,49 +3,78 @@ pub mod validation;
 use crate::Error;
 pub use units::*;
 
-use ethers_core::utils::{format_units as eth_format_units, parse_units as eth_parse_units, ParseUnits};
-use primitive_types::U256;
-
-pub fn parse_units<K, S>(amount: S, units: K) -> Result<ParseUnits, Error>
+pub fn parse_units<K, S>(amount: S, units: K) -> Result<u128, Error>
 where
     S: ToString,
     K: TryInto<Units, Error = Error> + Copy,
 {
     let exponent: u32 = units.try_into()?.as_num();
-    eth_parse_units(amount, exponent).map_err(Error::EthersConversionError)
+    let mut amount_str = amount.to_string().replace('_', "");
+    let negative = amount_str.chars().next().unwrap_or_default() == '-';
+    let dec_len = if let Some(di) = amount_str.find('.') {
+        amount_str.remove(di);
+        amount_str[di..].len() as u32
+    } else {
+        0
+    };
+
+    if dec_len > exponent {
+        // Truncate the decimal part if it is longer than the exponent
+        let amount_str = &amount_str[..(amount_str.len() - (dec_len - exponent) as usize)];
+        if negative {
+            Err(Error::NegativeValueNotAllowed)
+        } else {
+            Ok(amount_str.parse::<u128>()?)
+        }
+    } else if negative {
+        Err(Error::NegativeValueNotAllowed)
+    } else {
+        let mut a_uint: u128 = amount_str.parse()?;
+        a_uint *= 10_u128.checked_pow(exponent - dec_len).ok_or(Error::ParseOverflow)?;
+        Ok(a_uint)
+    }
 }
 
-pub fn format_units<T, K>(amount: T, units: K) -> Result<String, Error>
+pub fn format_units<K>(amount: u128, units: K) -> Result<String, Error>
 where
-    T: Into<ParseUnits>,
     K: TryInto<Units, Error = Error>,
 {
-    let exponent: u32 = units.try_into()?.as_num();
-    eth_format_units(amount, exponent).map_err(Error::EthersConversionError)
+    let units = units.try_into()?.as_num();
+    let exp10 = 10_u128.pow(units);
+    let integer = amount / exp10;
+    let decimals = (amount % exp10).to_string();
+    let units = units as usize;
+    Ok(format!("{integer}.{decimals:0>units$}"))
 }
 
-pub fn format_zil<T: Into<ParseUnits>>(amount: T) -> String {
+pub fn format_zil(amount: u128) -> String {
+    // Safe to call unwrap, "zil" can be converted to unit
     format_units(amount, "zil").unwrap()
 }
 
-pub fn parse_zil<S: ToString>(zil: S) -> Result<U256, Error> {
-    Ok(parse_units(zil, "zil")?.into())
+pub fn parse_zil<S: ToString>(zil: S) -> Result<u128, Error> {
+    parse_units(zil, "zil")
 }
 
 #[cfg(test)]
 mod tests {
-    use primitive_types::U256;
+    use claim::assert_err;
 
     use super::{format_units, format_zil, parse_units, parse_zil};
 
     #[test]
     fn parse_units_should_work() {
-        let amount_in_zil = U256::from_dec_str("15230001000000").unwrap();
-        let amount_in_li = U256::from_dec_str("15230001").unwrap();
-        let amount_in_qa = U256::from_dec_str("15").unwrap();
-        assert_eq!(amount_in_zil, parse_units("15.230001000000000000", "zil").unwrap().into());
-        assert_eq!(amount_in_li, parse_units("15.230001000000000000", "li").unwrap().into());
-        assert_eq!(amount_in_qa, parse_units("15.230001000000000000", "qa").unwrap().into());
+        let amount_in_zil = 15230001000000_u128;
+        let amount_in_li = 15230001_u128;
+        let amount_in_qa = 15_u128;
+        assert_eq!(amount_in_zil, parse_units("15.230001000000000000", "zil").unwrap());
+        assert_eq!(amount_in_li, parse_units("15.230001000000000000", "li").unwrap());
+        assert_eq!(amount_in_qa, parse_units("15.230001000000000000", "qa").unwrap());
+    }
+
+    #[test]
+    fn parse_units_should_return_error_for_negative_values() {
+        assert_err!(parse_units("-15.230001000000000000", "zil"));
     }
 
     #[test]
@@ -59,8 +88,13 @@ mod tests {
 
     #[test]
     fn parse_zil_should_work() {
-        let amount_in_zil = U256::from_dec_str("15230001000000").unwrap();
-        assert_eq!(amount_in_zil, parse_zil("15.230001000000000000").unwrap().into());
+        let amount_in_zil = 15230001000000;
+        assert_eq!(amount_in_zil, parse_zil("15.230001000000000000").unwrap());
+    }
+
+    #[test]
+    fn parse_zil_should_error_for_negative_values() {
+        assert_err!(parse_zil("-15.230001000000000000"));
     }
 
     #[test]
