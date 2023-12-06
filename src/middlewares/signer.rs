@@ -1,25 +1,27 @@
+use std::fmt::Debug;
+
 use async_trait::async_trait;
 use serde::de::DeserializeOwned;
 
-use crate::{providers::CreateTransactionRequest, signers::LocalWallet, transaction::Version, Error};
+use crate::{providers::CreateTransactionRequest, signers::Signer, transaction::Version, Error};
 
 use super::Middleware;
 
 #[derive(Debug)]
-pub struct SignerMiddleware<M> {
+pub struct SignerMiddleware<M, S> {
     // TODO: Make this generic
-    signer: LocalWallet,
+    signer: S,
     inner: M,
 }
 
-impl<M: Middleware> SignerMiddleware<M> {
-    pub fn new(inner: M, signer: LocalWallet) -> Self {
+impl<M: Middleware, S: Signer> SignerMiddleware<M, S> {
+    pub fn new(inner: M, signer: S) -> Self {
         Self { signer, inner }
     }
 }
 
 #[async_trait]
-impl<M: Middleware> Middleware for SignerMiddleware<M> {
+impl<M: Middleware, S: Signer + Debug + Sync + Send> Middleware for SignerMiddleware<M, S> {
     type Provider = M::Provider;
 
     type Inner = M;
@@ -43,7 +45,7 @@ impl<M: Middleware> Middleware for SignerMiddleware<M> {
         // TODO: Make it a middleware like ethers-rs
         // TODO: Is it a sane condition?
         if tx.nonce == u64::default() {
-            let balance = self.inner().get_balance(&self.signer.address).await?;
+            let balance = self.inner().get_balance(&self.signer.address()).await?;
             tx.nonce = balance.nonce + 1;
         }
 
@@ -56,7 +58,7 @@ impl<M: Middleware> Middleware for SignerMiddleware<M> {
     }
 
     fn sign_transaction(&self, tx: &CreateTransactionRequest) -> Result<crate::crypto::Signature, Error> {
-        self.signer.sign_transaction(tx)
+        Ok(self.signer.sign_transaction(tx))
     }
 
     fn sign(&self, data: &[u8]) -> Result<crate::crypto::Signature, Error> {

@@ -10,9 +10,9 @@ use url::Url;
 
 use crate::{
     contract::Init,
-    crypto::ZilAddress,
+    crypto::{Signature, ZilAddress},
     middlewares::{signer::SignerMiddleware, Middleware},
-    signers::LocalWallet,
+    signers::Signer,
     Error,
 };
 
@@ -36,7 +36,7 @@ impl<P: JsonRpcClient> Provider<P> {
         }
     }
 
-    pub fn with_signer(self, signer: LocalWallet) -> SignerMiddleware<Self> {
+    pub fn with_signer<S: Signer>(self, signer: S) -> SignerMiddleware<Self, S> {
         SignerMiddleware::new(self, signer)
     }
 
@@ -79,7 +79,7 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         self.chain_id
     }
 
-    fn sign_transaction(&self, _tx: &CreateTransactionRequest) -> Result<k256::ecdsa::Signature, Error> {
+    fn sign_transaction(&self, _tx: &CreateTransactionRequest) -> Result<Signature, Error> {
         Err(Error::NoSignerSpecified)
     }
 
