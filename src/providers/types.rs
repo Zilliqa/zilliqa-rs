@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use primitive_types::H160;
 use prost::Message;
-use serde::{Deserialize, Serializer};
+use serde::{Deserialize, Serialize, Serializer};
 use serde_aux::field_attributes::deserialize_number_from_string;
 
 use crate::{
@@ -327,14 +327,31 @@ pub struct EventLogEntry {
     pub params: Vec<EventParam>,
 }
 
-// TODO: DRY, This struct is like contract::Value
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct EventParam {
-    pub vname: String,
+    vname: String,
 
     #[serde(rename = "type")]
-    pub r#type: String,
-    pub value: String,
+    r#type: String,
+    value: String,
+}
+
+impl EventParam {
+    pub fn new<T: ToString>(vname: String, r#type: String, value: T) -> Self {
+        Self {
+            vname,
+            value: value.to_string(),
+            r#type,
+        }
+    }
+
+    pub fn new_from_str(vname: &str, r#type: &str, value: &str) -> Self {
+        Self {
+            vname: vname.to_string(),
+            value: value.to_string(),
+            r#type: r#type.to_string(),
+        }
+    }
 }
 
 #[derive(Deserialize, Debug, Clone)]

@@ -7,11 +7,14 @@ use serde::{Deserialize, Serialize};
 use crate::{
     crypto::ZilAddress,
     middlewares::Middleware,
+    providers::EventParam,
     providers::{CreateTransactionResponse, GetTransactionResponse},
     transaction::TransactionBuilder,
     util::parse_zil,
     Error,
 };
+
+pub type Value = EventParam;
 
 #[derive(Debug)]
 pub struct BaseContract<T: Middleware> {
@@ -21,33 +24,6 @@ pub struct BaseContract<T: Middleware> {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Init(pub Vec<Value>);
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Value {
-    vname: String,
-
-    #[serde(rename = "type")]
-    r#type: String,
-    value: String,
-}
-
-impl Value {
-    pub fn new<T: ToString>(vname: String, r#type: String, value: T) -> Self {
-        Self {
-            vname,
-            value: value.to_string(),
-            r#type,
-        }
-    }
-
-    pub fn new_from_str(vname: &str, r#type: &str, value: &str) -> Self {
-        Self {
-            vname: vname.to_string(),
-            value: value.to_string(),
-            r#type: r#type.to_string(),
-        }
-    }
-}
 
 #[derive(Debug, Serialize)]
 struct Transition {
