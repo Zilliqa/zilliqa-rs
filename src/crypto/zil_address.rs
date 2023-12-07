@@ -1,4 +1,5 @@
 use bech32::{FromBase32, ToBase32, Variant};
+use serde::de::Error as SerdeError;
 use serde::{Deserialize, Deserializer};
 use sha2::Digest;
 use std::{fmt::Display, ops::Deref, str::FromStr};
@@ -35,7 +36,7 @@ impl ZilAddress {
     fn from_bech32(address: &str) -> Result<Self, Error> {
         let (_hrp, data, _) = bech32::decode(address)?;
 
-        let address = hex::encode(Vec::<u8>::from_base32(&data).unwrap());
+        let address = hex::encode(Vec::<u8>::from_base32(&data)?);
 
         Ok(Self(to_checksum_address(&address)?))
     }
@@ -68,6 +69,17 @@ impl FromStr for ZilAddress {
 impl Display for ZilAddress {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl<'de> Deserialize<'de> for ZilAddress {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: &str = Deserialize::deserialize(deserializer)?;
+
+        s.parse::<Self>().map_err(D::Error::custom)
     }
 }
 
@@ -106,17 +118,5 @@ mod tests {
 
         let zil_addr: ZilAddress = address.parse().unwrap();
         assert_eq!(zil_addr.to_bech32().unwrap(), bech32_address);
-    }
-}
-
-impl<'de> Deserialize<'de> for ZilAddress {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s: &str = Deserialize::deserialize(deserializer)?;
-
-        // TODO: Remove unwrap
-        Ok(s.parse::<Self>().unwrap())
     }
 }

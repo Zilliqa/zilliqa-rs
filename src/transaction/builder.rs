@@ -25,7 +25,6 @@ impl TransactionBuilder {
     pub fn pay(mut self, amount: u128, to_addr: ZilAddress) -> Self {
         self.inner_transaction.amount = Some(amount);
         self.inner_transaction.to_addr = Some(to_addr);
-        // TODO: Do we need to handle error here?
         self.gas_price_if_none(parse_zil("0.002").unwrap()).gas_limit_if_none(50u64)
     }
 
