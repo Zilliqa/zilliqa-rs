@@ -11,7 +11,7 @@ use crate::{
 
 use super::{to_checksum_address, PublicKey};
 
-#[derive(Debug, PartialEq, Clone, serde::Serialize, Default)]
+#[derive(Eq, Hash, Debug, PartialEq, Clone, serde::Serialize, Default)]
 pub struct ZilAddress(String);
 
 impl Deref for ZilAddress {
