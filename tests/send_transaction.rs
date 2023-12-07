@@ -96,7 +96,7 @@ async fn send_zil_using_pay_function() -> Result<()> {
 
     let res = provider.get_balance(&receiver.address).await?;
 
-    assert_gt!(res.balance, parse_zil(1)?);
+    assert_eq!(res.balance, parse_zil("0.1")?);
 
     Ok(())
 }

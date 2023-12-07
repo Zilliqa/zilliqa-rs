@@ -1,13 +1,9 @@
 use std::str::FromStr;
 
 use k256::ecdsa::Signature;
-use primitive_types::H160;
-use prost::Message;
 
 use crate::{
     crypto::{generate_private_key, schnorr::sign, PrivateKey, PublicKey, ZilAddress},
-    proto::{Nonce, ProtoTransactionCoreInfo},
-    providers::CreateTransactionRequest,
     Error,
 };
 
@@ -41,26 +37,6 @@ impl LocalWallet {
 impl Signer for LocalWallet {
     fn sign(&self, message: &[u8]) -> Signature {
         sign(message, &self.private_key)
-    }
-
-    fn sign_transaction(&self, tx: &CreateTransactionRequest) -> Signature {
-        let to_addr: H160 = tx.to_addr.parse().unwrap();
-
-        let proto = ProtoTransactionCoreInfo {
-            version: tx.version.pack(),
-            toaddr: to_addr.as_bytes().to_vec(),
-            senderpubkey: Some(self.private_key.public_key().to_sec1_bytes().into()),
-            amount: Some(tx.amount.to_be_bytes().to_vec().into()),
-            gasprice: Some(tx.gas_price.to_be_bytes().to_vec().into()),
-            gaslimit: tx.gas_limit,
-            oneof2: Some(Nonce::Nonce(tx.nonce)),
-            //TODO: Remove clones
-            oneof8: tx.code.clone().map(|code| crate::proto::Code::Code(code.as_bytes().to_vec())),
-            oneof9: tx.data.clone().map(|data| crate::proto::Data::Data(data.as_bytes().to_vec())),
-        };
-
-        let txn_data = proto.encode_to_vec();
-        sign(&txn_data, &self.private_key)
     }
 
     fn address(&self) -> &ZilAddress {

@@ -1,9 +1,15 @@
 use std::fmt::Display;
 
+use primitive_types::H160;
+use prost::Message;
 use serde::{Deserialize, Serializer};
 use serde_aux::field_attributes::deserialize_number_from_string;
 
-use crate::{crypto::ZilAddress, transaction::Version};
+use crate::{
+    crypto::ZilAddress,
+    proto::{ByteArray, ProtoTransactionCoreInfo},
+    transaction::Version,
+};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct BalanceResponse {
@@ -28,6 +34,31 @@ pub struct CreateTransactionRequest {
     pub code: Option<String>,
     pub data: Option<String>,
     pub signature: Option<String>,
+}
+
+impl CreateTransactionRequest {
+    pub fn proto_encode(&self, sender_pubkey: ByteArray) -> Vec<u8> {
+        let to_addr: H160 = self.to_addr.parse().unwrap();
+        let proto = ProtoTransactionCoreInfo {
+            version: self.version.pack(),
+            toaddr: to_addr.as_bytes().to_vec(),
+            senderpubkey: Some(sender_pubkey),
+            amount: Some(self.amount.to_be_bytes().to_vec().into()),
+            gasprice: Some(self.gas_price.to_be_bytes().to_vec().into()),
+            gaslimit: self.gas_limit,
+            oneof2: Some(crate::proto::Nonce::Nonce(self.nonce)),
+            //TODO: Remove clones
+            oneof8: self
+                .code
+                .clone()
+                .map(|code| crate::proto::Code::Code(code.as_bytes().to_vec())),
+            oneof9: self
+                .data
+                .clone()
+                .map(|data| crate::proto::Data::Data(data.as_bytes().to_vec())),
+        };
+        proto.encode_to_vec()
+    }
 }
 
 pub fn to_str<S: Serializer, T: Display>(data: T, serializer: S) -> Result<S::Ok, S::Error> {
