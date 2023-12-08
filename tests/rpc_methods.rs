@@ -115,6 +115,7 @@ rpc_method_test!(
     &"988d047d9224412f76e61568f80016f8880ea898".parse::<ZilAddress>().unwrap()
 );
 
+// FIXME: Needs a proper return type
 rpc_method_test!(
     GetSmartContractState,
     &"988d047d9224412f76e61568f80016f8880ea898".parse::<ZilAddress>().unwrap()

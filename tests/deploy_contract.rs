@@ -197,6 +197,10 @@ async fn deploy_a_one_param_contract_through_the_rust_binding() -> Result<()> {
 
     println!("{response:?}");
 
+    let state = contract.get_state().await?;
+    let hello = contract.welcome_msg().await?;
+    assert_eq!(hello, state.welcome_msg);
+
     Ok(())
 }
 

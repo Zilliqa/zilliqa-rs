@@ -1,8 +1,9 @@
 pub mod factory;
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
 pub use factory::Factory as ContractFactory;
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde_json::Value as JsonValue;
 
 use crate::{
     crypto::ZilAddress,
@@ -54,6 +55,23 @@ impl<T: Middleware> BaseContract<T> {
             .send_transaction_without_confirm::<CreateTransactionResponse>(tx)
             .await?;
         self.client.get_transaction(&response.tran_id).await
+    }
+
+    pub async fn get_field<F: FromStr>(&self, field_name: &str) -> Result<F, Error> {
+        let state = self.client.get_smart_contract_state(&self.address).await?;
+        if let JsonValue::Object(object) = state {
+            if let Some(value) = object.get(field_name) {
+                return value
+                    .to_string()
+                    .parse::<F>()
+                    .map_err(|_| Error::FailedToParseContractField(field_name.to_string()));
+            }
+        }
+        Err(Error::NoSuchFieldInContractState(field_name.to_string()))
+    }
+
+    pub async fn get_state<S: Send + DeserializeOwned>(&self) -> Result<S, Error> {
+        self.client.get_smart_contract_state(&self.address).await
     }
 }
 

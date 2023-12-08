@@ -244,7 +244,7 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         Ok(self.send_request(GetSmartContractInit, rpc_params![contract_address]).await?)
     }
 
-    async fn get_smart_contract_state(&self, contract_address: &ZilAddress) -> Result<serde_json::Value, Error> {
+    async fn get_smart_contract_state<T: Send + DeserializeOwned>(&self, contract_address: &ZilAddress) -> Result<T, Error> {
         Ok(self
             .send_request(GetSmartContractState, rpc_params![contract_address])
             .await?)

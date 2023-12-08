@@ -15,8 +15,9 @@ use std::str::FromStr;
 struct Contract {
     path: PathBuf,
     name: String,
-    transitions: Vec<Transition>,
     contract_params: FieldList,
+    contract_fields: FieldList,
+    transitions: Vec<Transition>,
 }
 
 #[derive(Debug)]
@@ -37,6 +38,23 @@ struct FieldList(Vec<Field>);
 impl FieldList {
     fn to_string_for_rust_function_signature(&self) -> String {
         self.iter().fold("".to_string(), |acc, e| format!("{acc}, {e}"))
+    }
+
+    fn to_string_for_contract_field_getters(&self, state_struct_name: &str) -> String {
+        self.iter()
+            .map(|field| {
+                format!(
+                    "    pub async fn {}(&self) -> Result<{}, Error> {{\n        Ok(self.base.get_state::<{state_struct_name}>().await?.{})\n    }}",
+                    field.name, field.r#type.rust_type, field.name
+                )
+            })
+            .fold("".to_string(), |acc, e| format!("{acc}\n{e}"))
+    }
+
+    fn to_string_for_contract_state_struct(&self) -> String {
+        self.iter()
+            .map(|field| format!("    pub {}: {},", field.name, field.r#type.rust_type))
+            .fold("".to_string(), |acc, e| format!("{acc}\n{e}"))
     }
 
     fn to_string_for_scilla_init(&self) -> String {
@@ -94,7 +112,11 @@ impl std::fmt::Display for Contract {
         let contract_name = &self.name;
         let contract_params = self.contract_params.to_string_for_rust_function_signature();
         let contract_params_init = self.contract_params.to_string_for_scilla_init();
-        let transitions = self.transitions.iter().fold("".to_string(), |acc, e| format!("{acc}\n{e}"));
+        let contract_fields = self
+            .contract_fields
+            .to_string_for_contract_field_getters(&format!("{contract_name}State"));
+        let contract_fields_for_state_struct = self.contract_fields.to_string_for_contract_state_struct();
+        let transitions = self.transitions.iter().fold("".to_string(), |acc, e| format!("{acc}{e}"));
 
         write!(
             f,
@@ -117,8 +139,14 @@ impl<T: Middleware> {contract_name}<T> {{
     pub fn new(base: BaseContract<T>) -> Self {{
         Self{{base}}
     }}
+    {transitions}{contract_fields}
+    pub async fn get_state(&self) -> Result<{contract_name}State, Error> {{
+        self.base.get_state().await
+    }}
+}}
 
-    {transitions}
+#[derive(serde::Deserialize, Debug)]
+pub struct {contract_name}State {{{contract_fields_for_state_struct}
 }}
 "#,
             self.path.display()
@@ -199,12 +227,33 @@ fn parse_sexp(sexp_path: &Path, contract_path: PathBuf) -> Result<Contract> {
     let name = v["contr"][0]["cname"]["Ident"][0][1].to_string();
     let transitions = extract_transitions(&v["contr"][0]["ccomps"])?;
     let contract_params = parse_fields(&v["contr"][0]["cparams"][0])?;
+    let contract_fields = extract_contract_fields(&v["contr"][0]["cfields"])?;
     Ok(Contract {
         path: contract_path.canonicalize().context("Failed to canonicalize contract path")?,
         name,
         transitions,
         contract_params,
+        contract_fields,
     })
+}
+
+fn extract_contract_fields(cfields: &Value) -> Result<FieldList> {
+    let mut fields = vec![];
+    for elem in cfields[0].list_iter().unwrap() {
+        let field_name = elem[0]["SimpleLocal"][0].to_string();
+        let field_type = elem[1][0].to_string();
+        let field_type = match field_type.as_str() {
+            "PrimType" => elem[1][1].to_string(),
+            _ => elem[1].to_string(),
+        };
+
+        let r#type = field_type.parse()?;
+        fields.push(Field {
+            name: field_name,
+            r#type,
+        })
+    }
+    Ok(FieldList(fields))
 }
 
 fn extract_transitions(ccomps: &Value) -> Result<Vec<Transition>> {

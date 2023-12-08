@@ -27,11 +27,12 @@ If a provider has a designated signer, all transactions requiring signing will b
 
 ```rust
 use zilliqa_rs::providers::{Http, Provider};
+use zilliqa_rs::signers::LocalWallet;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let wallet = "dcf2cbdd171a21c480aa7f53d77f31bb102282b3ff099c78e3118b37348c72f7".parse::<LocalWallet>()?;
-    let provider = Provider::<Http>::try_from(END_POINT).unwrap().with_signer(wallet);
+    let provider = Provider::<Http>::try_from("http://127.0.0.1").unwrap().with_signer(wallet);
     Ok(())
 }
 ```
@@ -71,7 +72,6 @@ async fn main() -> anyhow::Result<()> {
     let receiver = LocalWallet::create_random()?;
     let tx = TransactionBuilder::default()
         .to_address(receiver.address)
-        .nonce(4)
         .amount(200u128 * 10u128.pow(12))
         .gas_price(2000000000u128)
         .gas_limit(50u64)
@@ -90,6 +90,7 @@ use zilliqa_rs::providers::{Http, Provider};
 use zilliqa_rs::transaction::TransactionBuilder;
 use zilliqa_rs::signers::LocalWallet;
 use zilliqa_rs::middlewares::Middleware;
+use zilliqa_rs::util::parse_zil;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -101,7 +102,7 @@ async fn main() -> anyhow::Result<()> {
         .with_signer(wallet.clone());
 
     let receiver = LocalWallet::create_random()?;
-    let amount = 200u128 * 10u128.pow(12);
+    let amount = parse_zil("0.2")?;
 
     let tx = TransactionBuilder::default().pay(amount, receiver.address.clone()).build();
     provider.send_transaction_without_confirm(tx).await?;
@@ -181,7 +182,8 @@ async fn main() -> anyhow::Result<()> {
         .with_chain_id(1)
         .with_signer(wallet.clone());
 
-    let contract = contract::Timestamp::deploy(provider).await?;
+    let a_big_number = primitive_types::U256::from_dec_str("123")?;
+    let contract = contract::Timestamp::deploy(Arc::new(provider)).await?;
     contract.event_timestamp(a_big_number).await;
 
     Ok(())
@@ -190,3 +192,49 @@ async fn main() -> anyhow::Result<()> {
 If a transition needs some parameters, like here, You must pass them too, otherwise you won't be able to compile the code.
 
 It's possible to call a transition without using rust binding. Take a look at `call_a_param_less_transition` and `call_transition_with_single_string_param` tests in the [deployment tests](./tests/deploy_contract.rs). 
+
+### Getting the contract's state
+Suppose we have a contract like this: 
+```scilla
+contract HelloWorld
+(owner: ByStr20)
+
+field welcome_msg : String = "Hello world!"
+```
+A struct named `HelloWorldState` is created under the hood for this contract like:
+```rust
+#[derive(serde::Deserialize, Debug)]
+pub struct HelloWorldState {
+    pub welcome_msg: String,
+}
+```
+And you can get the latest state of the contract with `get_state` function:
+```rust
+use std::sync::Arc;
+
+use zilliqa_rs::{
+    contract,
+    providers::{Http, Provider},
+    signers::LocalWallet,
+};
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    const END_POINT: &str = "http://localhost:5555";
+
+    let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
+
+    let provider = Provider::<Http>::try_from(END_POINT)?
+        .with_chain_id(1)
+        .with_signer(wallet.clone());
+
+    let contract = contract::HelloWorld::deploy(Arc::new(provider), "Helloooo".to_string()).await?;
+
+    let state = contract.get_state().await?;
+    let hello = contract.welcome_msg().await?;
+    assert_eq!(hello, "helloooo".to_string());
+    assert_eq!(hello, state.welcome_msg);
+
+    Ok(())
+}
+```
+As you can see in the above code snippet, you can get individual states like `welcome_msg` through a function with the same name, `welcome_msg()`.

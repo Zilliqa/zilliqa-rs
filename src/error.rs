@@ -39,6 +39,12 @@ pub enum Error {
     #[error("Parse overflow")]
     ParseOverflow,
 
+    #[error("Field {0} doesn't exist in the contract.")]
+    NoSuchFieldInContractState(String),
+
+    #[error("Failed to parse {0}.")]
+    FailedToParseContractField(String),
+
     #[error(transparent)]
     JsonRpcError(#[from] jsonrpsee::core::Error),
 

@@ -205,8 +205,7 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
         self.inner().get_smart_contract_init(contract_address).await
     }
 
-    // TODO: What's proper return type?
-    async fn get_smart_contract_state(&self, contract_address: &ZilAddress) -> Result<serde_json::Value, Error> {
+    async fn get_smart_contract_state<T: Send + DeserializeOwned>(&self, contract_address: &ZilAddress) -> Result<T, Error> {
         self.inner().get_smart_contract_state(contract_address).await
     }
 
