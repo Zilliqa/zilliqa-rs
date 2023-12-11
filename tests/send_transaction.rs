@@ -1,5 +1,9 @@
+mod common;
+
 use anyhow::Result;
 use claim::assert_gt;
+use common::TestContext;
+use test_context::test_context;
 use zilliqa_rs::{
     middlewares::Middleware,
     providers::{CreateTransactionResponse, Http, Provider},
@@ -9,17 +13,12 @@ use zilliqa_rs::{
     Error,
 };
 
+#[test_context(TestContext)]
 #[tokio::test]
-async fn send_transaction() -> Result<()> {
-    const END_POINT: &str = "http://localhost:5555";
+async fn send_transaction(ctx: &TestContext) -> Result<()> {
+    let provider = ctx.provider();
 
-    let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
-
-    let provider = Provider::<Http>::try_from(END_POINT)?
-        .with_chain_id(1)
-        .with_signer(wallet.clone());
-
-    let sender_balance = provider.get_balance(&wallet.address).await?;
+    let sender_balance = provider.get_balance(&ctx.wallet.address).await?;
 
     assert_gt!(sender_balance.balance, parse_zil("0.1")?);
 
@@ -31,9 +30,8 @@ async fn send_transaction() -> Result<()> {
         .gas_limit(50u64)
         .build();
 
-    provider
-        .send_transaction_without_confirm::<CreateTransactionResponse>(tx)
-        .await?;
+    let tx = provider.send_transaction(tx).await?;
+    tx.receipt().await?;
 
     let res = provider.get_balance(&receiver.address).await?;
 
@@ -69,16 +67,11 @@ async fn if_version_is_not_set_create_transaction_should_return_error() -> Resul
     Ok(())
 }
 
+#[test_context(TestContext)]
 #[tokio::test]
-async fn send_zil_using_pay_function() -> Result<()> {
-    const END_POINT: &str = "http://localhost:5555";
-
-    let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
-    let provider = Provider::<Http>::try_from(END_POINT)?
-        .with_chain_id(1)
-        .with_signer(wallet.clone());
-
-    let sender_balance = provider.get_balance(&wallet.address).await?;
+async fn send_zil_using_pay_function(ctx: &TestContext) -> Result<()> {
+    let provider = ctx.provider();
+    let sender_balance = provider.get_balance(&ctx.wallet.address).await?;
 
     assert_gt!(sender_balance.balance, parse_zil("0.1")?);
 
