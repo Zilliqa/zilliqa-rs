@@ -6,10 +6,6 @@ edition = "2021"
 [lib]
 path = "src/lib.rs"
 
-[[bin]]
-path = "src/main.rs"
-name = "zilliqa-rs"
-
 [build-dependencies]
 lexpr = "0.2.7"
 anyhow = "1.0.75"
