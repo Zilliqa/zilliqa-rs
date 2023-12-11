@@ -1,12 +1,10 @@
-use std::sync::Arc;
-
 use anyhow::Result;
 use claim::assert_gt;
 use zilliqa_rs::{
     middlewares::Middleware,
     providers::{CreateTransactionResponse, Http, Provider},
     signers::LocalWallet,
-    transaction::{Transaction, TransactionBuilder, Version},
+    transaction::{TransactionBuilder, Version},
     util::parse_zil,
     Error,
 };
@@ -111,7 +109,6 @@ async fn get_transaction_receipt() -> Result<()> {
         .with_chain_id(617)
         .with_signer(wallet.clone());
 
-    let provider = Arc::new(provider);
     let sender_balance = provider.get_balance(&wallet.address).await?;
     println!("{sender_balance:?}");
 
