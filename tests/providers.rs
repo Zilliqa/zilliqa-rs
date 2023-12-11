@@ -6,7 +6,6 @@ use zilliqa_rs::{
     providers::{Http, Provider},
 };
 
-// TODO: Make it a real test
 #[tokio::test]
 async fn http_provider_should_work_fine_with_url_parse() {
     let provider = Provider::<Http>::try_from("http://127.0.0.1:5555");

@@ -61,6 +61,14 @@ impl TryFrom<&str> for Provider<Http> {
     }
 }
 
+impl TryFrom<Url> for Provider<Http> {
+    type Error = Error;
+
+    fn try_from(url: Url) -> Result<Self, Self::Error> {
+        Ok(Provider::new(Http::new(url)?, u16::default()))
+    }
+}
+
 #[async_trait]
 impl<P: JsonRpcClient> Middleware for Provider<P> {
     type Provider = P;
