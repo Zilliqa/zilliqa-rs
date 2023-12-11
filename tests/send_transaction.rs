@@ -116,20 +116,16 @@ async fn get_transaction_receipt() -> Result<()> {
     println!("{sender_balance:?}");
 
     let receiver = LocalWallet::create_random()?;
-    let amount = parse_zil("2")?;
+    let amount = parse_zil("0.2")?;
 
     let tx = TransactionBuilder::default().pay(amount, receiver.address.clone()).build();
-    let res = provider
-        .send_transaction_without_confirm::<CreateTransactionResponse>(tx)
-        .await?;
+    let tx = provider.send_transaction(tx).await?;
 
-    println!("{res:?}");
-    let tx = Transaction::new(res.tran_id, provider.clone());
     let receipt = tx.receipt().await?;
     println!("{:?}", receipt.borrow());
 
     let sender_balance = provider.get_balance(&receiver.address).await?;
-    println!("{sender_balance:?}");
+    assert_eq!(sender_balance.balance, parse_zil("0.2")?);
 
     Ok(())
 }

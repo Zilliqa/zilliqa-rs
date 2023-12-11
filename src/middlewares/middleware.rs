@@ -2,6 +2,7 @@ use crate::{
     contract::Init,
     crypto::{Signature, ZilAddress},
     providers::{types::*, JsonRpcClient, Provider},
+    transaction::Transaction,
     util::validation::is_tx_hash,
     Error,
 };
@@ -33,6 +34,13 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
 
     async fn deploy_contract(&self, tx: CreateTransactionRequest) -> Result<DeployContractResponse, Error> {
         self.send_transaction_without_confirm::<DeployContractResponse>(tx).await
+    }
+
+    /// Sends a transaction and returns a more higher-level response to work with on application layer.
+    async fn send_transaction(&self, tx: CreateTransactionRequest) -> Result<Transaction<Self::Provider>, Error> {
+        let response = self.send_transaction_without_confirm::<CreateTransactionResponse>(tx).await?;
+
+        Ok(Transaction::new(response.tran_id, self.provider()))
     }
 
     /// If there is any signer middleware, will sign it first and then send it.

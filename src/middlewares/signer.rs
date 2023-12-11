@@ -45,7 +45,7 @@ impl<M: Middleware, S: Signer + Debug + Sync + Send> Middleware for SignerMiddle
         // TODO: Make it a middleware like ethers-rs
         // TODO: Is it a sane condition?
         if tx.nonce == u64::default() {
-            let balance = self.inner().get_balance(&self.signer.address()).await?;
+            let balance = self.inner().get_balance(self.signer.address()).await?;
             tx.nonce = balance.nonce + 1;
         }
 

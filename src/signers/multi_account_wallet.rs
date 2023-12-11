@@ -4,19 +4,13 @@ use crate::{crypto::ZilAddress, Error};
 
 use super::{LocalWallet, Signer};
 
+#[derive(Default)]
 pub struct MultiAccountWallet {
     default_account: Option<ZilAddress>,
     accounts: HashMap<ZilAddress, Rc<LocalWallet>>,
 }
 
 impl MultiAccountWallet {
-    pub fn new() -> Self {
-        Self {
-            default_account: None,
-            accounts: HashMap::new(),
-        }
-    }
-
     pub fn new_with_accounts(accounts: Vec<LocalWallet>) -> Self {
         let default_account = if !accounts.is_empty() {
             Some(accounts[0].address.clone())
@@ -76,7 +70,7 @@ impl MultiAccountWallet {
 
     pub fn default_account(&self) -> Option<Rc<LocalWallet>> {
         if let Some(address) = &self.default_account {
-            self.accounts.get(address).map(|w| w.clone())
+            self.accounts.get(address).cloned()
         } else {
             None
         }
@@ -106,7 +100,7 @@ mod tests {
 
     #[test]
     fn wallet_create_function_should_create_a_new_account() {
-        let mut multi_account_wallet = MultiAccountWallet::new();
+        let mut multi_account_wallet = MultiAccountWallet::default();
         let wallet = multi_account_wallet.create().unwrap();
         assert_eq!(multi_account_wallet.accounts.len(), 1);
 
@@ -119,7 +113,7 @@ mod tests {
 
     #[test]
     fn add_by_private_key_function_should_create_a_new_account_in_wallet() {
-        let mut wallet = MultiAccountWallet::new();
+        let mut wallet = MultiAccountWallet::default();
         let private_key = generate_private_key();
 
         let local_wallet = wallet.add_by_private_key(&private_key).unwrap();
@@ -133,7 +127,7 @@ mod tests {
 
     #[test]
     fn remove_should_return_non_if_address_does_not_exist_in_wallet() {
-        let mut wallet = MultiAccountWallet::new();
+        let mut wallet = MultiAccountWallet::default();
         wallet.create().unwrap();
 
         assert_none!(wallet.remove(&"0x381f4008505e940AD7681EC3468a719060caF796".parse().unwrap()));
@@ -141,7 +135,7 @@ mod tests {
 
     #[test]
     fn remove_should_return_remove_account_from_wallet_if_address_exist() {
-        let mut wallet = MultiAccountWallet::new();
+        let mut wallet = MultiAccountWallet::default();
         let local_wallet = wallet.create().unwrap();
 
         let removed_account = wallet.remove(&local_wallet.address).unwrap();
@@ -152,7 +146,7 @@ mod tests {
 
     #[test]
     fn set_default_should_set_the_default_account_correctly() {
-        let mut wallet = MultiAccountWallet::new();
+        let mut wallet = MultiAccountWallet::default();
         let local_wallet1 = wallet.create().unwrap();
         let local_wallet2 = wallet.create().unwrap();
 

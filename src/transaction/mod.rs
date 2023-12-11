@@ -1,20 +1,21 @@
 pub mod builder;
 pub mod version;
 
-use std::{
-    cell::{Cell, RefCell},
-    sync::Arc,
-};
+use std::cell::{Cell, RefCell};
 
 pub use builder::*;
 pub use version::*;
 
-use crate::{middlewares::Middleware, providers::TransactionReceipt, Error};
+use crate::{
+    middlewares::Middleware,
+    providers::{JsonRpcClient, Provider, TransactionReceipt},
+    Error,
+};
 
 #[derive(Debug)]
-pub struct Transaction<T: Middleware> {
+pub struct Transaction<'a, T: JsonRpcClient> {
     pub id: String,
-    client: Arc<T>,
+    client: &'a Provider<T>,
     status: Cell<TxStatus>,
     receipt: RefCell<TransactionReceipt>,
 }
@@ -27,8 +28,8 @@ pub enum TxStatus {
     Rejected,
 }
 
-impl<T: Middleware> Transaction<T> {
-    pub fn new(id: String, client: Arc<T>) -> Self {
+impl<'a, T: JsonRpcClient> Transaction<'a, T> {
+    pub fn new(id: String, client: &'a Provider<T>) -> Self {
         Self {
             id,
             client,
