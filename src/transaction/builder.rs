@@ -2,7 +2,7 @@ use crate::{crypto::ZilAddress, providers::CreateTransactionRequest, util::parse
 
 use super::Version;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct TransactionParams {
     pub version: Option<Version>,
     pub nonce: Option<u64>,

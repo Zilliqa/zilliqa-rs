@@ -31,7 +31,7 @@ async fn send_transaction(ctx: &TestContext) -> Result<()> {
         .build();
 
     let tx = provider.send_transaction(tx).await?;
-    tx.receipt().await?;
+    tx.confirm().await?;
 
     let res = provider.get_balance(&receiver.address).await?;
 
@@ -111,8 +111,8 @@ async fn get_transaction_receipt() -> Result<()> {
     let tx = TransactionBuilder::default().pay(amount, receiver.address.clone()).build();
     let tx = provider.send_transaction(tx).await?;
 
-    let receipt = tx.receipt().await?;
-    println!("{:?}", receipt.borrow());
+    let res = tx.confirm().await?;
+    println!("{:?}", res.receipt);
 
     let sender_balance = provider.get_balance(&receiver.address).await?;
     assert_eq!(sender_balance.balance, parse_zil("0.2")?);

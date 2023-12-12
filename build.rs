@@ -95,7 +95,7 @@ impl FromStr for Type {
             "Uint32" => "u32",
             "Uint64" => "u64",
             "Uint128" => "u128",
-            "BNum" => "primitive_types::U256",
+            "BNum" | "Uint256" => "primitive_types::U256",
             "ByStr20" | "String" => "String",
             _ => return Err(anyhow!("Failed to map {} to any rust type", s)),
         };
@@ -117,12 +117,32 @@ impl std::fmt::Display for Contract {
             .to_string_for_contract_field_getters(&format!("{contract_name}State"));
         let contract_fields_for_state_struct = self.contract_fields.to_string_for_contract_state_struct();
         let transitions = self.transitions.iter().fold("".to_string(), |acc, e| format!("{acc}{e}"));
+        let transitions_as_fields = self
+            .transitions
+            .iter()
+            .map(|tr| format!("{}: RefCell<TransitionCall<T>>,", tr.name.to_case(convert_case::Case::Snake)))
+            .reduce(|acc, e| format!("{acc}\n    {e}"))
+            .unwrap_or_default();
+
+        let transitions_as_fields_constructor = self
+            .transitions
+            .iter()
+            .map(|tr| {
+                format!(
+                    "{}: RefCell::new(TransitionCall::new(\"{}\", &base.address, base.client.clone())),",
+                    tr.name.to_case(convert_case::Case::Snake),
+                    tr.name
+                )
+            })
+            .reduce(|acc, e| format!("{acc}\n            {e}"))
+            .unwrap_or_default();
 
         write!(
             f,
             r#"#[derive(Debug)]
 pub struct {contract_name}<T: Middleware> {{
     pub base: BaseContract<T>,
+    {transitions_as_fields}
 }}
 
 impl<T: Middleware> {contract_name}<T> {{
@@ -136,8 +156,15 @@ impl<T: Middleware> {contract_name}<T> {{
         Ok(Self::new(factory.deploy_from_file(&std::path::PathBuf::from("{}"), init, None).await?))
     }}
 
+    pub fn address(&self) -> &ZilAddress  {{
+        &self.base.address
+    }}
+
     pub fn new(base: BaseContract<T>) -> Self {{
-        Self{{base}}
+        Self{{
+            {transitions_as_fields_constructor}
+            base,
+        }}
     }}
     {transitions}{contract_fields}
     pub async fn get_state(&self) -> Result<{contract_name}State, Error> {{
@@ -156,16 +183,16 @@ pub struct {contract_name}State {{{contract_fields_for_state_struct}
 
 impl std::fmt::Display for Transition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let transition_name_snake = self.name.to_case(convert_case::Case::Snake);
         write!(
             f,
             r#"
-    pub async fn {}(&self {}) -> Result<GetTransactionResponse, Error> {{
-        self.base.call("{}", vec![{}]).await
+    pub fn {transition_name_snake}(&self {}) -> RefMut<'_, transition_call::TransitionCall<T>> {{
+        self.{transition_name_snake}.borrow_mut().args(vec![{}]);
+        self.{transition_name_snake}.borrow_mut()
     }}
 "#,
-            self.name.to_case(convert_case::Case::Snake),
             self.params.to_string_for_rust_function_signature(),
-            self.name,
             self.params.to_string_for_scilla_init()
         )
     }

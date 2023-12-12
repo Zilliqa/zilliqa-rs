@@ -184,12 +184,35 @@ async fn main() -> anyhow::Result<()> {
 
     let a_big_number = primitive_types::U256::from_dec_str("123")?;
     let contract = contract::Timestamp::deploy(Arc::new(provider)).await?;
-    contract.event_timestamp(a_big_number).await;
+    contract.event_timestamp(a_big_number).call().await;
 
     Ok(())
 }
 ```
 If a transition needs some parameters, like here, You must pass them too, otherwise you won't be able to compile the code.
+
+### Calling a transaction with custom parameters for nonce, amount, etc.
+It's possible to override default transaction parameters such as nonce and amount.
+```rust
+use zilliqa_rs::{contract, middlewares::Middleware, util::parse_zil};
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    const END_POINT: &str = "http://localhost:5555";
+
+    let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
+
+    let provider = Arc::new(Provider::<Http>::try_from(END_POINT)?
+        .with_chain_id(1)
+        .with_signer(wallet.clone()));
+
+    let contract = contract::SendZil::deploy(provider.clone()).await?;
+    // Override the amount before sending the transaction.
+    contract.accept_zil().amount(parse_zil("0.5")?).call().await?;
+    assert_eq!(provider.get_balance(contract.address()).await?.balance, parse_zil("0.5")?);
+    Ok(())
+}
+```
 
 It's possible to call a transition without using rust binding. Take a look at `call_a_param_less_transition` and `call_transition_with_single_string_param` tests in the [deployment tests](./tests/deploy_contract.rs). 
 

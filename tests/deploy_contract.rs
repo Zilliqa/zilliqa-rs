@@ -85,7 +85,7 @@ async fn call_a_param_less_transition(ctx: &TestContext) -> Result<()> {
         .await
         .unwrap();
 
-    let response = contract.call("getHello", vec![]).await?;
+    let response = contract.call("getHello", vec![], None).await?;
 
     println!("{response:?}");
 
@@ -109,7 +109,7 @@ async fn call_transition_with_single_string_param(ctx: &TestContext) -> Result<(
         .unwrap();
 
     let response = contract
-        .call("setHello", vec![Value::new_from_str("msg", "String", "heellleeo")])
+        .call("setHello", vec![Value::new_from_str("msg", "String", "heellleeo")], None)
         .await?;
 
     println!("{response:?}");
@@ -135,7 +135,7 @@ async fn call_a_param_less_transition_though_the_rust_binding(ctx: &TestContext)
 
     let contract = contract::HelloWorld::new(contract);
 
-    let response = contract.get_hello().await?;
+    let response = contract.get_hello().call().await?;
 
     println!("{response:?}");
 
@@ -156,7 +156,7 @@ async fn deploy_a_one_param_contract_through_the_rust_binding(ctx: &TestContext)
     let provider = ctx.provider();
     let contract = contract::HelloWorld::deploy(provider, ctx.wallet.address.to_string()).await?;
 
-    let response = contract.get_hello().await?;
+    let response = contract.get_hello().call().await?;
 
     println!("{response:?}");
 
@@ -173,7 +173,7 @@ async fn call_transition_with_single_string_param_using_rust_binding(ctx: &TestC
     let provider = ctx.provider();
     let contract = contract::HelloWorld::deploy(provider, ctx.wallet.address.to_string()).await?;
 
-    let response = contract.set_hello("heellleeo".to_string()).await?;
+    let response = contract.set_hello("heellleeo".to_string()).call().await?;
 
     println!("{response:?}");
 
