@@ -7,16 +7,16 @@ edition = "2021"
 path = "src/lib.rs"
 
 [build-dependencies]
-lexpr = "0.2.7"
 anyhow = "1.0.75"
 convert_case = "0.6.0"
+scilla-parser = {git = "https://github.com/its-saeed/scilla-parser.git"}
 
 [dependencies]
 anyhow = "1.0.75"
 async-trait = "0.1.74"
 bech32 = "0.9.1"
 hex = "0.4.3"
-jsonrpsee = { version = "0.20.3", features = ["http-client", "macros"] }
+jsonrpsee = { version = "0.21.0", features = ["http-client", "macros"] }
 k256 = "0.13.2"
 paste = "1.0.14"
 primitive-types = { version = "0.12.2", features = ["serde"] }

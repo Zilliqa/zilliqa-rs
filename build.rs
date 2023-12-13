@@ -1,159 +1,147 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use convert_case::Casing;
-use lexpr::Value;
+use scilla_parser::Contract;
+use scilla_parser::Field;
+use scilla_parser::FieldList;
+use scilla_parser::Transition;
 use std::env;
 use std::error::Error;
-use std::fmt::Display;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
-use std::process::Command;
-use std::str::FromStr;
 
-#[derive(Debug)]
-struct Contract {
-    path: PathBuf,
-    name: String,
-    contract_params: FieldList,
-    contract_fields: FieldList,
-    transitions: Vec<Transition>,
+fn scilla_type_to_rust(scilla_type: &str) -> &'static str {
+    match scilla_type {
+        "Int64" => "i64",
+        "Int128" => "i128",
+        "Int256" => "i256",
+        "Uint32" => "u32",
+        "Uint64" => "u64",
+        "Uint128" => "u128",
+        "BNum" | "Uint256" => "primitive_types::U256",
+        "ByStr20" | "String" => "String",
+        _ => {
+            add_to_log(&format!(
+                "Failed to map {} to any rust type. `Value` is used instead.",
+                scilla_type
+            ));
+            "Value"
+        }
+    }
 }
 
-#[derive(Debug)]
-struct Transition {
-    name: String,
-    params: FieldList,
+fn transition_to_rust_function(transition: &Transition) -> String {
+    let transition_name_snake = transition.name.to_case(convert_case::Case::Snake);
+    format!(
+        r#"
+    pub fn {transition_name_snake}(&self {}) -> RefMut<'_, transition_call::TransitionCall<T>> {{
+        self.{transition_name_snake}.borrow_mut().args(vec![{}]);
+        self.{transition_name_snake}.borrow_mut()
+    }}
+"#,
+        fields_to_parameters_of_functions_signature(&transition.params),
+        fields_to_values(&transition.params)
+    )
 }
 
-#[derive(Debug)]
-struct Field {
-    pub name: String,
-    pub r#type: Type,
+fn fields_to_contract_state_struct(fields: &FieldList) -> String {
+    fields
+        .iter()
+        .map(|field| format!("    pub {}: {},", field.name, scilla_type_to_rust(&field.r#type)))
+        .fold("".to_string(), |acc, e| format!("{acc}\n{e}"))
 }
 
-#[derive(Debug)]
-struct FieldList(Vec<Field>);
+fn field_to_function_param(field: &Field) -> String {
+    let field_name = field.name.to_case(convert_case::Case::Snake);
+    let rust_type = scilla_type_to_rust(&field.r#type);
+    format!("{field_name}: {rust_type}",)
+}
 
-impl FieldList {
-    fn to_string_for_rust_function_signature(&self) -> String {
-        self.iter().fold("".to_string(), |acc, e| format!("{acc}, {e}"))
-    }
+fn transitions_as_struct_fields(transitions: &Vec<Transition>) -> String {
+    transitions
+        .iter()
+        .map(|tr| format!("{}: RefCell<TransitionCall<T>>,", tr.name.to_case(convert_case::Case::Snake)))
+        .reduce(|acc, e| format!("{acc}\n    {e}"))
+        .unwrap_or_default()
+}
 
-    fn to_string_for_contract_field_getters(&self, state_struct_name: &str) -> String {
-        self.iter()
-            .map(|field| {
-                format!(
-                    "    pub async fn {}(&self) -> Result<{}, Error> {{\n        Ok(self.base.get_state::<{state_struct_name}>().await?.{})\n    }}",
-                    field.name, field.r#type.rust_type, field.name
-                )
-            })
-            .fold("".to_string(), |acc, e| format!("{acc}\n{e}"))
-    }
+fn fields_to_parameters_of_functions_signature(params: &FieldList) -> String {
+    params
+        .iter()
+        .map(|field| field_to_function_param(&field))
+        .fold("".to_string(), |acc, e| format!("{acc}, {e}"))
+}
 
-    fn to_string_for_contract_state_struct(&self) -> String {
-        self.iter()
-            .map(|field| format!("    pub {}: {},", field.name, field.r#type.rust_type))
-            .fold("".to_string(), |acc, e| format!("{acc}\n{e}"))
-    }
+fn fields_to_values(params: &FieldList) -> String {
+    params.iter().fold("".to_string(), |acc, e| {
+        let delim = if acc.is_empty() { "" } else { ", " };
+        format!(
+            r#"{acc}{delim}Value::new("{}".to_string(), "{}".to_string(), {}) "#,
+            e.name,
+            e.r#type,
+            e.name.to_case(convert_case::Case::Snake)
+        )
+    })
+}
 
-    fn to_string_for_scilla_init(&self) -> String {
-        self.iter().fold("".to_string(), |acc, e| {
-            let delim = if acc.is_empty() { "" } else { ", " };
+fn transitions_to_transition_call_object(transitions: &Vec<Transition>) -> String {
+    transitions
+        .iter()
+        .map(|tr| {
             format!(
-                r#"{acc}{delim}Value::new("{}".to_string(), "{}".to_string(), {}) "#,
-                e.name,
-                e.r#type.scilla_type,
-                e.name.to_case(convert_case::Case::Snake)
+                "{}: RefCell::new(TransitionCall::new(\"{}\", &base.address, base.client.clone())),",
+                tr.name.to_case(convert_case::Case::Snake),
+                tr.name
             )
         })
-    }
+        .reduce(|acc, e| format!("{acc}\n            {e}"))
+        .unwrap_or_default()
 }
 
-impl std::ops::Deref for FieldList {
-    type Target = Vec<Field>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-#[derive(Debug)]
-struct Type {
-    scilla_type: String,
-    rust_type: String,
-}
-
-impl FromStr for Type {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> std::prelude::v1::Result<Self, Self::Err> {
-        let rust_type = match s {
-            "Int64" => "i64",
-            "Int128" => "i128",
-            "Int256" => "i256",
-            "Uint32" => "u32",
-            "Uint64" => "u64",
-            "Uint128" => "u128",
-            "BNum" | "Uint256" => "primitive_types::U256",
-            "ByStr20" | "String" => "String",
-            _ => return Err(anyhow!("Failed to map {} to any rust type", s)),
-        };
-
-        Ok(Self {
-            rust_type: rust_type.to_string(),
-            scilla_type: s.to_string(),
-        })
-    }
-}
-
-impl std::fmt::Display for Contract {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let contract_name = &self.name;
-        let contract_params = self.contract_params.to_string_for_rust_function_signature();
-        let contract_params_init = self.contract_params.to_string_for_scilla_init();
-        let contract_fields = self
-            .contract_fields
-            .to_string_for_contract_field_getters(&format!("{contract_name}State"));
-        let contract_fields_for_state_struct = self.contract_fields.to_string_for_contract_state_struct();
-        let transitions = self.transitions.iter().fold("".to_string(), |acc, e| format!("{acc}{e}"));
-        let transitions_as_fields = self
-            .transitions
-            .iter()
-            .map(|tr| format!("{}: RefCell<TransitionCall<T>>,", tr.name.to_case(convert_case::Case::Snake)))
-            .reduce(|acc, e| format!("{acc}\n    {e}"))
-            .unwrap_or_default();
-
-        let transitions_as_fields_constructor = self
-            .transitions
-            .iter()
-            .map(|tr| {
+fn to_string_for_contract_field_getters(contract_fields: &FieldList, contract_name: &str) -> String {
+    contract_fields.iter()
+            .map(|field| {
+                let rust_type = scilla_type_to_rust(&field.r#type);
                 format!(
-                    "{}: RefCell::new(TransitionCall::new(\"{}\", &base.address, base.client.clone())),",
-                    tr.name.to_case(convert_case::Case::Snake),
-                    tr.name
+                    "    pub async fn {}(&self) -> Result<{}, Error> {{\n        Ok(self.base.get_state::<{contract_name}State>().await?.{})\n    }}",
+                    field.name, rust_type, field.name
                 )
             })
-            .reduce(|acc, e| format!("{acc}\n            {e}"))
-            .unwrap_or_default();
+            .fold("".to_string(), |acc, e| format!("{acc}\n{e}"))
+}
 
-        write!(
-            f,
-            r#"#[derive(Debug)]
+fn generate_rust_binding(contract: &Contract) -> Result<String> {
+    let contract_name = &contract.name;
+    let contract_path = &contract.path;
+    let transitions_as_fields = transitions_as_struct_fields(&contract.transitions);
+    let contract_deployment_params = fields_to_parameters_of_functions_signature(&contract.constructor_params);
+    let contract_deployment_params_for_init = fields_to_values(&contract.constructor_params);
+    let transitions_for_new_function = transitions_to_transition_call_object(&contract.transitions);
+    let contract_field_getters = to_string_for_contract_field_getters(&contract.fields, &contract.name);
+    let contract_fields_for_state_struct = fields_to_contract_state_struct(&contract.fields);
+    let transitions = contract
+        .transitions
+        .iter()
+        .map(|tr| transition_to_rust_function(tr))
+        .fold("".to_string(), |acc, e| format!("{acc}{e}"));
+
+    Ok(format!(
+        r#"#[derive(Debug)]
 pub struct {contract_name}<T: Middleware> {{
     pub base: BaseContract<T>,
     {transitions_as_fields}
 }}
 
 impl<T: Middleware> {contract_name}<T> {{
-    pub async fn deploy(client: Arc<T> {contract_params}) -> Result<Self, Error> {{
+    pub async fn deploy(client: Arc<T> {contract_deployment_params}) -> Result<Self, Error> {{
         let factory = ContractFactory::new(client.clone());
         let init = Init(vec![
             Value::new("_scilla_version".to_string(), "Uint32".to_string(), "0".to_string()),
-            {contract_params_init}
+            {contract_deployment_params_for_init}
         ]);
 
-        Ok(Self::new(factory.deploy_from_file(&std::path::PathBuf::from("{}"), init, None).await?))
+        Ok(Self::new(factory.deploy_from_file(&std::path::PathBuf::from({contract_path:?}), init, None).await?))
     }}
 
     pub fn address(&self) -> &ZilAddress  {{
@@ -162,11 +150,11 @@ impl<T: Middleware> {contract_name}<T> {{
 
     pub fn new(base: BaseContract<T>) -> Self {{
         Self{{
-            {transitions_as_fields_constructor}
+            {transitions_for_new_function}
             base,
         }}
     }}
-    {transitions}{contract_fields}
+    {transitions}{contract_field_getters}
     pub async fn get_state(&self) -> Result<{contract_name}State, Error> {{
         self.base.get_state().await
     }}
@@ -175,136 +163,13 @@ impl<T: Middleware> {contract_name}<T> {{
 #[derive(serde::Deserialize, Debug)]
 pub struct {contract_name}State {{{contract_fields_for_state_struct}
 }}
-"#,
-            self.path.display()
-        )
-    }
-}
-
-impl std::fmt::Display for Transition {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let transition_name_snake = self.name.to_case(convert_case::Case::Snake);
-        write!(
-            f,
-            r#"
-    pub fn {transition_name_snake}(&self {}) -> RefMut<'_, transition_call::TransitionCall<T>> {{
-        self.{transition_name_snake}.borrow_mut().args(vec![{}]);
-        self.{transition_name_snake}.borrow_mut()
-    }}
-"#,
-            self.params.to_string_for_rust_function_signature(),
-            self.params.to_string_for_scilla_init()
-        )
-    }
-}
-
-impl Display for Field {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}: {}",
-            self.name.to_case(convert_case::Case::Snake),
-            self.r#type.rust_type
-        )
-    }
+"#
+    ))
 }
 
 fn add_to_log(log: &str) {
     let mut file = OpenOptions::new().append(true).create(true).open("/tmp/log.txt").unwrap();
     writeln!(file, "{}", log).unwrap();
-}
-
-fn run_scilla_fmt(path: &Path) -> Result<PathBuf> {
-    //docker run --rm -v contract.scilla:/tmp/input.scilla  -i zilliqa/scilla:v0.13.3 /scilla/0/bin/scilla-fmt --sexp --human-readable -d /tmp/input.scilla
-    let volume = &format!("{}:/tmp/input.scilla", path.canonicalize().unwrap().display());
-
-    let output = Command::new("docker")
-        .args([
-            "run",
-            "--rm",
-            "-v",
-            volume,
-            "-i",
-            "zilliqa/scilla:v0.13.3",
-            "/scilla/0/bin/scilla-fmt",
-            "--sexp",
-            "--human-readable",
-            "-d",
-            "/tmp/input.scilla",
-        ])
-        .output()
-        .context("Failed to execute docker command")?;
-
-    let out_dir = env::var_os("OUT_DIR").context("Failed to get OUT_DIR")?;
-    let dest_path = Path::new(&out_dir).join(format!(
-        "{}.sexp",
-        path.file_stem()
-            .context("Failed to get file stem")?
-            .to_str()
-            .context("Failed to convert to string")?
-    ));
-    std::fs::write(&dest_path, String::from_utf8(output.stdout)?)?;
-
-    Ok(dest_path)
-}
-
-fn parse_sexp(sexp_path: &Path, contract_path: PathBuf) -> Result<Contract> {
-    let sexp = std::fs::read_to_string(sexp_path).context(format!("Failed to read {} to string", sexp_path.display()))?;
-    let v = lexpr::from_str(&sexp).context("Failed to parse sexp")?;
-    let name = v["contr"][0]["cname"]["Ident"][0][1].to_string();
-    let transitions = extract_transitions(&v["contr"][0]["ccomps"])?;
-    let contract_params = parse_fields(&v["contr"][0]["cparams"][0])?;
-    let contract_fields = extract_contract_fields(&v["contr"][0]["cfields"])?;
-    Ok(Contract {
-        path: contract_path.canonicalize().context("Failed to canonicalize contract path")?,
-        name,
-        transitions,
-        contract_params,
-        contract_fields,
-    })
-}
-
-fn extract_contract_fields(cfields: &Value) -> Result<FieldList> {
-    let mut fields = vec![];
-    for elem in cfields[0].list_iter().unwrap() {
-        let field_name = elem[0]["SimpleLocal"][0].to_string();
-        let field_type = elem[1][0].to_string();
-        let field_type = match field_type.as_str() {
-            "PrimType" => elem[1][1].to_string(),
-            _ => elem[1].to_string(),
-        };
-
-        let r#type = field_type.parse()?;
-        fields.push(Field {
-            name: field_name,
-            r#type,
-        })
-    }
-    Ok(FieldList(fields))
-}
-
-fn extract_transitions(ccomps: &Value) -> Result<Vec<Transition>> {
-    let mut transitions = vec![];
-    for elem in ccomps[0].list_iter().unwrap() {
-        let transition_name = elem["comp_name"][0]["SimpleLocal"][0].to_string();
-        transitions.push(Transition {
-            name: transition_name,
-            params: parse_fields(&elem["comp_params"][0])?,
-        })
-    }
-
-    Ok(transitions)
-}
-
-fn parse_fields(cparams: &Value) -> Result<FieldList> {
-    let mut params = vec![];
-    for elem in cparams.list_iter().unwrap() {
-        let name = elem[0]["SimpleLocal"][0].to_string();
-        let r#type = elem[1][1].to_string().parse()?;
-        params.push(Field { name, r#type })
-    }
-
-    Ok(FieldList(params))
 }
 
 fn generate(contracts_path: PathBuf) -> Result<()> {
@@ -316,14 +181,16 @@ fn generate(contracts_path: PathBuf) -> Result<()> {
         let entry = entry.context("Failed to get contract entry")?;
         let path = entry.path();
         if path.is_file() {
-            match run_scilla_fmt(&path) {
-                Ok(sexp_path) => {
-                    let contract = parse_sexp(&sexp_path, path)?;
-                    add_to_log(&format!("Parsed: {:?}", contract));
-                    writeln!(file, "{}", contract)?;
-                }
-                Err(_) => {
-                    add_to_log(&format!("Failed to call scilla_fmt for {}", path.display()));
+            match scilla_parser::parse(&path) {
+                Ok(contract) => match generate_rust_binding(&contract) {
+                    Ok(code) => writeln!(file, "{code}").unwrap(),
+                    Err(e) => {
+                        add_to_log(&format!("Failed to generate rust binding for {path:?}. {e}"));
+                        continue;
+                    }
+                },
+                Err(e) => {
+                    add_to_log(&format!("Failed to parse {path:?}. {e}",));
                     continue;
                 }
             }

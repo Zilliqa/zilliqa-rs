@@ -46,7 +46,7 @@ pub enum Error {
     FailedToParseContractField(String),
 
     #[error(transparent)]
-    JsonRpcError(#[from] jsonrpsee::core::Error),
+    JsonRpcError(#[from] jsonrpsee::core::ClientError),
 
     #[error(transparent)]
     FromHexError(#[from] hex::FromHexError),
