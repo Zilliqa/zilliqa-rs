@@ -39,7 +39,7 @@ impl<M: Middleware, S: Signer + Debug + Sync + Send> Middleware for SignerMiddle
         mut tx: CreateTransactionRequest,
     ) -> Result<T, Error> {
         if !tx.version.valid() {
-            tx.version = Version::new(self.inner().get_chainid());
+            tx.version = Version::new(self.inner().chainid());
         }
 
         // TODO: Make it a middleware like ethers-rs

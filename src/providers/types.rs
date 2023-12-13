@@ -284,6 +284,16 @@ pub struct TransactionReceipt {
     pub errors: Option<String>,
 }
 
+impl TransactionReceipt {
+    pub fn event_log(&self, event_name: &str) -> Option<&EventLogEntry> {
+        if let Some(ref event_logs) = self.event_logs {
+            event_logs.iter().find(|entry| entry._eventname == event_name)
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct TransactionStatus {
     #[serde(rename = "ID")]
@@ -329,11 +339,11 @@ pub struct EventLogEntry {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct EventParam {
-    vname: String,
+    pub vname: String,
 
     #[serde(rename = "type")]
-    r#type: String,
-    value: String,
+    pub r#type: String,
+    pub value: String,
 }
 
 impl EventParam {

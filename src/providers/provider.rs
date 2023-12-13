@@ -83,7 +83,7 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         self
     }
 
-    fn get_chainid(&self) -> u16 {
+    fn chainid(&self) -> u16 {
         self.chain_id
     }
 

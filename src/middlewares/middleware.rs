@@ -28,8 +28,8 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
         self.inner().is_signer()
     }
 
-    fn get_chainid(&self) -> u16 {
-        self.inner().get_chainid()
+    fn chainid(&self) -> u16 {
+        self.inner().chainid()
     }
 
     async fn deploy_contract(&self, tx: CreateTransactionRequest) -> Result<DeployContractResponse, Error> {
