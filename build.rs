@@ -48,7 +48,15 @@ fn transition_to_rust_function(transition: &Transition) -> String {
 fn fields_to_contract_state_struct(fields: &FieldList) -> String {
     fields
         .iter()
-        .map(|field| format!("    pub {}: {},", field.name, scilla_type_to_rust(&field.r#type)))
+        .map(|field| {
+            let rust_type = scilla_type_to_rust(&field.r#type);
+            let (rust_type, comment) = if rust_type == "Value" {
+                ("String", format!("    // Failed to map `{}` to a rust type", field.r#type))
+            } else {
+                (rust_type, "".to_string())
+            };
+            format!("    pub {}: {},{}", field.name, rust_type, comment)
+        })
         .fold("".to_string(), |acc, e| format!("{acc}\n{e}"))
 }
 
@@ -76,12 +84,20 @@ fn fields_to_parameters_of_functions_signature(params: &FieldList) -> String {
 fn fields_to_values(params: &FieldList) -> String {
     params.iter().fold("".to_string(), |acc, e| {
         let delim = if acc.is_empty() { "" } else { ", " };
-        format!(
-            r#"{acc}{delim}Value::new("{}".to_string(), "{}".to_string(), {}) "#,
-            e.name,
-            e.r#type,
-            e.name.to_case(convert_case::Case::Snake)
-        )
+        let rust_type = scilla_type_to_rust(&e.r#type);
+        match rust_type {
+            "Value" => {
+                format!(r#"{acc}{delim}{} "#, e.name.to_case(convert_case::Case::Snake))
+            }
+            _ => {
+                format!(
+                    r#"{acc}{delim}Value::new("{}".to_string(), "{}".to_string(), {}) "#,
+                    e.name,
+                    e.r#type,
+                    e.name.to_case(convert_case::Case::Snake)
+                )
+            }
+        }
     })
 }
 
@@ -103,6 +119,8 @@ fn to_string_for_contract_field_getters(contract_fields: &FieldList, contract_na
     contract_fields.iter()
             .map(|field| {
                 let rust_type = scilla_type_to_rust(&field.r#type);
+                // If rust type is `Value` it means we couldn't map the scilla type to a rust one. So we consider it as a string
+                let rust_type = if rust_type == "Value" { "String" } else {rust_type};
                 format!(
                     "    pub async fn {}(&self) -> Result<{}, Error> {{\n        Ok(self.base.get_state::<{contract_name}State>().await?.{})\n    }}",
                     field.name, rust_type, field.name
