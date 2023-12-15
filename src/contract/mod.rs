@@ -1,7 +1,7 @@
 pub mod factory;
 pub mod transition_call;
 use core::cell::{RefCell, RefMut};
-use std::{str::FromStr, sync::Arc};
+use std::{ops::Deref, str::FromStr, sync::Arc};
 
 pub use factory::Factory as ContractFactory;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -23,6 +23,14 @@ pub struct BaseContract<T: Middleware> {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Init(pub Vec<Value>);
+
+impl Deref for Init {
+    type Target = Vec<Value>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 #[derive(Debug, Serialize)]
 struct Transition {
@@ -60,6 +68,10 @@ impl<T: Middleware> BaseContract<T> {
             }
         }
         Err(Error::NoSuchFieldInContractState(field_name.to_string()))
+    }
+
+    pub async fn get_init(&self) -> Result<Init, Error> {
+        self.client.get_smart_contract_init(&self.address).await
     }
 
     pub async fn get_state<S: Send + DeserializeOwned>(&self) -> Result<S, Error> {

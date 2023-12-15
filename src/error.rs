@@ -42,6 +42,9 @@ pub enum Error {
     #[error("Field {0} doesn't exist in the contract.")]
     NoSuchFieldInContractState(String),
 
+    #[error("Field {0} doesn't exist in the contract init.")]
+    NoSuchFieldInContractInit(String),
+
     #[error("Failed to parse {0}.")]
     FailedToParseContractField(String),
 

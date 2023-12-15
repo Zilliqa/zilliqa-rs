@@ -60,6 +60,29 @@ fn fields_to_contract_state_struct(fields: &FieldList) -> String {
         .fold("".to_string(), |acc, e| format!("{acc}\n{e}"))
 }
 
+fn get_contract_init_fields_getters(init_params: &FieldList) -> String {
+    init_params
+        .iter()
+        .map(|field| {
+            let rust_type = scilla_type_to_rust(&field.r#type);
+            // If rust type is `Value` it means we couldn't map the scilla type to a rust one. So we consider it as a string
+            let rust_type = if rust_type == "Value" { "String" } else { rust_type };
+            let field_name = &field.name;
+            format!(
+                r#"
+    pub async fn {field_name}(&self) -> Result<{rust_type}, Error> {{
+        self.base.get_init()
+            .await?
+            .iter()
+            .find(|value| value.vname == "{field_name}").ok_or(Error::NoSuchFieldInContractInit("{field_name}".to_string()))?
+            .value
+            .parse().map_err(|_| Error::FailedToParseContractField("{field_name}".to_string()))
+    }}"#,
+            )
+        })
+        .fold("".to_string(), |acc, e| format!("{acc}\n{e}"))
+}
+
 fn field_to_function_param(field: &Field) -> String {
     let field_name = field.name.to_case(convert_case::Case::Snake);
     let rust_type = scilla_type_to_rust(&field.r#type);
@@ -133,11 +156,13 @@ fn generate_rust_binding(contract: &Contract) -> Result<String> {
     let contract_name = &contract.name;
     let contract_path = &contract.path;
     let transitions_as_fields = transitions_as_struct_fields(&contract.transitions);
-    let contract_deployment_params = fields_to_parameters_of_functions_signature(&contract.constructor_params);
-    let contract_deployment_params_for_init = fields_to_values(&contract.constructor_params);
+    let contract_deployment_params = fields_to_parameters_of_functions_signature(&contract.init_params);
+    let contract_deployment_params_for_init = fields_to_values(&contract.init_params);
     let transitions_for_new_function = transitions_to_transition_call_object(&contract.transitions);
-    let contract_field_getters = to_string_for_contract_field_getters(&contract.fields, &contract.name);
+    let contract_field_getters = to_string_for_contract_field_getters(&contract.fields, &contract_name);
     let contract_fields_for_state_struct = fields_to_contract_state_struct(&contract.fields);
+    let contract_init_field_getters = get_contract_init_fields_getters(&contract.init_params);
+    let contract_init_fields_for_init_struct = fields_to_contract_state_struct(&contract.init_params);
     let transitions = contract
         .transitions
         .iter()
@@ -172,7 +197,7 @@ impl<T: Middleware> {contract_name}<T> {{
             base,
         }}
     }}
-    {transitions}{contract_field_getters}
+    {transitions}{contract_field_getters}{contract_init_field_getters}
     pub async fn get_state(&self) -> Result<{contract_name}State, Error> {{
         self.base.get_state().await
     }}
@@ -180,6 +205,10 @@ impl<T: Middleware> {contract_name}<T> {{
 
 #[derive(serde::Deserialize, Debug)]
 pub struct {contract_name}State {{{contract_fields_for_state_struct}
+}}
+
+#[derive(serde::Deserialize, Debug)]
+pub struct {contract_name}Init {{{contract_init_fields_for_init_struct}
 }}
 "#
     ))
