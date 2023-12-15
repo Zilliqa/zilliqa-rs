@@ -1,6 +1,7 @@
 pub mod factory;
 pub mod transition_call;
 use core::cell::{RefCell, RefMut};
+use std::collections::HashMap;
 use std::{ops::Deref, str::FromStr, sync::Arc};
 
 pub use factory::Factory as ContractFactory;

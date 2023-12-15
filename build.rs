@@ -11,22 +11,26 @@ use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 
-fn scilla_type_to_rust(scilla_type: &str) -> &'static str {
+fn scilla_type_to_rust(scilla_type: &scilla_parser::Type) -> String {
     match scilla_type {
-        "Int64" => "i64",
-        "Int128" => "i128",
-        "Int256" => "i256",
-        "Uint32" => "u32",
-        "Uint64" => "u64",
-        "Uint128" => "u128",
-        "BNum" | "Uint256" => "primitive_types::U256",
-        "ByStr20" | "String" => "String",
-        _ => {
+        scilla_parser::Type::Int32 => "i32".to_string(),
+        scilla_parser::Type::Int64 => "i64".to_string(),
+        scilla_parser::Type::Int128 => "i128".to_string(),
+        scilla_parser::Type::Int256 => "primitive_types::I256".to_string(),
+        scilla_parser::Type::Uint32 => "u32".to_string(),
+        scilla_parser::Type::Uint64 => "u64".to_string(),
+        scilla_parser::Type::Uint128 => "u128".to_string(),
+        scilla_parser::Type::Uint256 => "primitive_types::U256".to_string(),
+        scilla_parser::Type::String => "String".to_string(),
+        scilla_parser::Type::BNum => "primitive_types::U256".to_string(),
+        scilla_parser::Type::Map(key, value) => format!("HashMap<{}, {}>", scilla_type_to_rust(key), scilla_type_to_rust(value)),
+        scilla_parser::Type::ByStr(_) => "String".to_string(),
+        scilla_parser::Type::Other(_) => {
             add_to_log(&format!(
-                "Failed to map {} to any rust type. `Value` is used instead.",
+                "Failed to map {:?} to any rust type. `Value` is used instead.",
                 scilla_type
             ));
-            "Value"
+            "Value".to_string()
         }
     }
 }
@@ -51,7 +55,10 @@ fn fields_to_contract_state_struct(fields: &FieldList) -> String {
         .map(|field| {
             let rust_type = scilla_type_to_rust(&field.r#type);
             let (rust_type, comment) = if rust_type == "Value" {
-                ("String", format!("    // Failed to map `{}` to a rust type", field.r#type))
+                (
+                    "String".to_string(),
+                    format!("    // Failed to map `{:?}` to a rust type", field.r#type),
+                )
             } else {
                 (rust_type, "".to_string())
             };
@@ -66,7 +73,11 @@ fn get_contract_init_fields_getters(init_params: &FieldList) -> String {
         .map(|field| {
             let rust_type = scilla_type_to_rust(&field.r#type);
             // If rust type is `Value` it means we couldn't map the scilla type to a rust one. So we consider it as a string
-            let rust_type = if rust_type == "Value" { "String" } else { rust_type };
+            let rust_type = if rust_type == "Value" {
+                "String".to_string()
+            } else {
+                rust_type
+            };
             let field_name = &field.name;
             format!(
                 r#"
@@ -108,7 +119,7 @@ fn fields_to_values(params: &FieldList) -> String {
     params.iter().fold("".to_string(), |acc, e| {
         let delim = if acc.is_empty() { "" } else { ", " };
         let rust_type = scilla_type_to_rust(&e.r#type);
-        match rust_type {
+        match rust_type.as_str() {
             "Value" => {
                 format!(r#"{acc}{delim}{} "#, e.name.to_case(convert_case::Case::Snake))
             }
@@ -143,7 +154,7 @@ fn to_string_for_contract_field_getters(contract_fields: &FieldList, contract_na
             .map(|field| {
                 let rust_type = scilla_type_to_rust(&field.r#type);
                 // If rust type is `Value` it means we couldn't map the scilla type to a rust one. So we consider it as a string
-                let rust_type = if rust_type == "Value" { "String" } else {rust_type};
+                let rust_type = if rust_type == "Value" { "String".to_string() } else {rust_type};
                 format!(
                     "    pub async fn {}(&self) -> Result<{}, Error> {{\n        Ok(self.base.get_state::<{contract_name}State>().await?.{})\n    }}",
                     field.name, rust_type, field.name
