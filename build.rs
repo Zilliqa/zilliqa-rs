@@ -11,6 +11,28 @@ use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 
+fn scilla_type_to_rust_for_state(scilla_type: &scilla_parser::Type) -> String {
+    match scilla_type {
+        scilla_parser::Type::Int32 => "String".to_string(),
+        scilla_parser::Type::Int64 => "String".to_string(),
+        scilla_parser::Type::Int128 => "String".to_string(),
+        scilla_parser::Type::Int256 => "String".to_string(),
+        scilla_parser::Type::Uint32 => "String".to_string(),
+        scilla_parser::Type::Uint64 => "String".to_string(),
+        scilla_parser::Type::Uint128 => "String".to_string(),
+        scilla_parser::Type::Uint256 => "String".to_string(),
+        scilla_parser::Type::String => "String".to_string(),
+        scilla_parser::Type::BNum => "String".to_string(),
+        scilla_parser::Type::Map(key, value) => format!(
+            "HashMap<{}, {}>",
+            scilla_type_to_rust_for_state(key),
+            scilla_type_to_rust_for_state(value)
+        ),
+        scilla_parser::Type::ByStr(_) => "String".to_string(),
+        scilla_parser::Type::Other(_) => "String".to_string(),
+    }
+}
+
 fn scilla_type_to_rust(scilla_type: &scilla_parser::Type) -> String {
     match scilla_type {
         scilla_parser::Type::Int32 => "i32".to_string(),
@@ -53,16 +75,8 @@ fn fields_to_contract_state_struct(fields: &FieldList) -> String {
     fields
         .iter()
         .map(|field| {
-            let rust_type = scilla_type_to_rust(&field.r#type);
-            let (rust_type, comment) = if rust_type == "Value" {
-                (
-                    "String".to_string(),
-                    format!("    // Failed to map `{:?}` to a rust type", field.r#type),
-                )
-            } else {
-                (rust_type, "".to_string())
-            };
-            format!("    pub {}: {},{}", field.name, rust_type, comment)
+            let rust_type = scilla_type_to_rust_for_state(&field.r#type);
+            format!("    pub {}: {},", field.name, rust_type)
         })
         .fold("".to_string(), |acc, e| format!("{acc}\n{e}"))
 }
@@ -152,12 +166,10 @@ fn transitions_to_transition_call_object(transitions: &Vec<Transition>) -> Strin
 fn to_string_for_contract_field_getters(contract_fields: &FieldList, contract_name: &str) -> String {
     contract_fields.iter()
             .map(|field| {
-                let rust_type = scilla_type_to_rust(&field.r#type);
-                // If rust type is `Value` it means we couldn't map the scilla type to a rust one. So we consider it as a string
-                let rust_type = if rust_type == "Value" { "String".to_string() } else {rust_type};
+                let rust_type = scilla_type_to_rust_for_state(&field.r#type);
                 format!(
-                    "    pub async fn {}(&self) -> Result<{}, Error> {{\n        Ok(self.base.get_state::<{contract_name}State>().await?.{})\n    }}",
-                    field.name, rust_type, field.name
+                    "    pub async fn {}(&self) -> Result<{rust_type}, Error> {{\n        Ok(self.base.get_state::<{contract_name}State>().await?.{})\n    }}",
+                    field.name, field.name
                 )
             })
             .fold("".to_string(), |acc, e| format!("{acc}\n{e}"))
