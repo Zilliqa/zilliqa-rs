@@ -1,11 +1,15 @@
 mod common;
 
 use common::TestContext;
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 use test_context::test_context;
 
 use anyhow::Result;
-use zilliqa_rs::contract::{self, ContractFactory, Init, Value};
+use zilliqa_rs::{
+    contract::{self, ContractFactory, Init, Value},
+    providers::Provider,
+    signers::LocalWallet,
+};
 
 impl TestContext {
     fn timestamp_contract(&self) -> PathBuf {
@@ -174,6 +178,37 @@ async fn call_transition_with_single_string_param_using_rust_binding(ctx: &TestC
     let contract = contract::HelloWorld::deploy(provider, ctx.wallet.address.to_string()).await?;
 
     let response = contract.set_hello("heellleeo".to_string()).call().await?;
+
+    println!("{response:?}");
+
+    Ok(())
+}
+
+#[test_context(TestContext)]
+#[tokio::test]
+async fn call_transition_with_a_different_signer(ctx: &TestContext) -> Result<()> {
+    let wallet = LocalWallet::new("d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba").unwrap();
+    let provider = Arc::new(
+        Provider::try_from(ctx.endpoint.clone())
+            .unwrap()
+            .with_chain_id(ctx.chain_id)
+            .with_signer(wallet.clone()),
+    );
+    let contract = contract::HelloWorld::deploy(provider, ctx.wallet.address.to_string()).await?;
+
+    let wallet = LocalWallet::new("589417286a3213dceb37f8f89bd164c3505a4cec9200c61f7c6db13a30a71b45").unwrap();
+    let new_provider = Arc::new(
+        Provider::try_from(ctx.endpoint.clone())
+            .unwrap()
+            .with_chain_id(ctx.chain_id)
+            .with_signer(wallet.clone()),
+    );
+
+    let response = contract
+        .set_hello("heellleeo".to_string())
+        .signer(new_provider)
+        .call()
+        .await?;
 
     println!("{response:?}");
 

@@ -56,6 +56,11 @@ impl<T: Middleware> TransitionCall<T> {
         self
     }
 
+    pub fn signer(&mut self, signer: Arc<T>) -> &mut Self {
+        self.client = signer;
+        self
+    }
+
     pub async fn call(&self) -> Result<GetTransactionResponse, Error> {
         let tx = TransactionBuilder::from(self.overridden_params.clone())
             .gas_price_if_none(parse_zil("0.002")?)

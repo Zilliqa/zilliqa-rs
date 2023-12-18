@@ -9,7 +9,6 @@ use super::Middleware;
 
 #[derive(Debug)]
 pub struct SignerMiddleware<M, S> {
-    // TODO: Make this generic
     signer: S,
     inner: M,
 }
@@ -17,6 +16,13 @@ pub struct SignerMiddleware<M, S> {
 impl<M: Middleware, S: Signer> SignerMiddleware<M, S> {
     pub fn new(inner: M, signer: S) -> Self {
         Self { signer, inner }
+    }
+
+    pub fn change_signer(self, signer: S) -> Self {
+        Self {
+            signer,
+            inner: self.inner,
+        }
     }
 }
 

@@ -9,6 +9,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 pub use transition_call::*;
 
+use crate::signers::Signer;
 use crate::{
     crypto::ZilAddress, middlewares::Middleware, providers::EventParam, providers::GetTransactionResponse,
     transaction::TransactionParams, Error,
@@ -43,6 +44,13 @@ struct Transition {
 impl<T: Middleware> BaseContract<T> {
     pub fn new(address: ZilAddress, client: Arc<T>) -> Self {
         Self { address, client }
+    }
+
+    pub fn connect<S: Signer>(&self, client: Arc<T>) -> Self {
+        Self {
+            address: self.address.clone(),
+            client,
+        }
     }
 
     pub async fn call(

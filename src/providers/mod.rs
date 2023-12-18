@@ -4,7 +4,7 @@ pub mod net;
 pub mod provider;
 pub mod types;
 
-pub use http::Provider as Http;
+pub use http::Http;
 pub use provider::Provider;
 pub use types::*;
 
