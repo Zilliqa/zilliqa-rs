@@ -30,6 +30,12 @@ fn scilla_type_to_rust_for_state(scilla_type: &scilla_parser::Type) -> String {
         ),
         scilla_parser::Type::ByStr(_) => "String".to_string(),
         scilla_parser::Type::Other(_) => "String".to_string(),
+        scilla_parser::Type::Bool => "String".to_string(),
+        scilla_parser::Type::Option(t) => format!("Option<{}>", scilla_type_to_rust_for_state(t)),
+        scilla_parser::Type::Pair(a, b) => {
+            format!("({}, {})", scilla_type_to_rust_for_state(a), scilla_type_to_rust_for_state(b))
+        }
+        scilla_parser::Type::List(t) => format!("Vec<{}>", scilla_type_to_rust_for_state(t)),
     }
 }
 
@@ -49,11 +55,17 @@ fn scilla_type_to_rust(scilla_type: &scilla_parser::Type) -> String {
         scilla_parser::Type::ByStr(_) => "String".to_string(),
         scilla_parser::Type::Other(_) => {
             add_to_log(&format!(
-                "Failed to map {:?} to any rust type. `Value` is used instead.",
+                "Failed to map {:?} to any rust type. `ScillaValue` is used instead.",
                 scilla_type
             ));
-            "Value".to_string()
+            "ScillaValue".to_string()
         }
+        scilla_parser::Type::Bool => "bool".to_string(),
+        scilla_parser::Type::Option(t) => format!("Option<{}>", scilla_type_to_rust(t)),
+        scilla_parser::Type::Pair(a, b) => {
+            format!("({}, {})", scilla_type_to_rust_for_state(a), scilla_type_to_rust(b))
+        }
+        scilla_parser::Type::List(t) => format!("Vec<{}>", scilla_type_to_rust(t)),
     }
 }
 
@@ -86,8 +98,8 @@ fn get_contract_init_fields_getters(init_params: &FieldList) -> String {
         .iter()
         .map(|field| {
             let rust_type = scilla_type_to_rust(&field.r#type);
-            // If rust type is `Value` it means we couldn't map the scilla type to a rust one. So we consider it as a string
-            let rust_type = if rust_type == "Value" {
+            // If rust type is `ScillaValue` it means we couldn't map the scilla type to a rust one. So we consider it as a string
+            let rust_type = if rust_type == "ScillaValue" {
                 "String".to_string()
             } else {
                 rust_type
@@ -134,12 +146,12 @@ fn fields_to_values(params: &FieldList) -> String {
         let delim = if acc.is_empty() { "" } else { ", " };
         let rust_type = scilla_type_to_rust(&e.r#type);
         match rust_type.as_str() {
-            "Value" => {
+            "ScillaValue" => {
                 format!(r#"{acc}{delim}{} "#, e.name.to_case(convert_case::Case::Snake))
             }
             _ => {
                 format!(
-                    r#"{acc}{delim}Value::new("{}".to_string(), "{}".to_string(), {}) "#,
+                    r#"{acc}{delim}ScillaValue::new("{}".to_string(), "{}".to_string(), {}.to_value()) "#,
                     e.name,
                     e.r#type,
                     e.name.to_case(convert_case::Case::Snake)
@@ -175,9 +187,8 @@ fn to_string_for_contract_field_getters(contract_fields: &FieldList, contract_na
             .fold("".to_string(), |acc, e| format!("{acc}\n{e}"))
 }
 
-fn generate_rust_binding(contract: &Contract) -> Result<String> {
+fn generate_rust_binding(contract: &Contract, contract_path: &Path) -> Result<String> {
     let contract_name = &contract.name;
-    let contract_path = &contract.path;
     let transitions_as_fields = transitions_as_struct_fields(&contract.transitions);
     let contract_deployment_params = fields_to_parameters_of_functions_signature(&contract.init_params);
     let contract_deployment_params_for_init = fields_to_values(&contract.init_params);
@@ -203,7 +214,7 @@ impl<T: Middleware> {contract_name}<T> {{
     pub async fn deploy(client: Arc<T> {contract_deployment_params}) -> Result<Self, Error> {{
         let factory = ContractFactory::new(client.clone());
         let init = Init(vec![
-            Value::new("_scilla_version".to_string(), "Uint32".to_string(), "0".to_string()),
+            ScillaValue::new("_scilla_version".to_string(), "Uint32".to_string(), "0".to_value()),
             {contract_deployment_params_for_init}
         ]);
 
@@ -251,8 +262,8 @@ fn generate(contracts_path: PathBuf) -> Result<()> {
         let entry = entry.context("Failed to get contract entry")?;
         let path = entry.path();
         if path.is_file() {
-            match scilla_parser::parse(&path) {
-                Ok(contract) => match generate_rust_binding(&contract) {
+            match Contract::from_path(&path) {
+                Ok(contract) => match generate_rust_binding(&contract, &path) {
                     Ok(code) => writeln!(file, "{code}").unwrap(),
                     Err(e) => {
                         add_to_log(&format!("Failed to generate rust binding for {path:?}. {e}"));

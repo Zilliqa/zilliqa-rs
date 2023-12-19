@@ -1,6 +1,6 @@
 use super::{
     net::RPCMethod::{self, *},
-    CreateTransactionRequest, SmartContractCode, SmartContracts, TransactionStatus, TransactionsForTxBlockEx,
+    CreateTransactionRequest, EventParam, SmartContractCode, SmartContracts, TransactionStatus, TransactionsForTxBlockEx,
     TxnBodiesForTxBlockEx,
 };
 use async_trait::async_trait;
@@ -9,7 +9,6 @@ use serde::de::DeserializeOwned;
 use url::Url;
 
 use crate::{
-    contract::Init,
     crypto::{Signature, ZilAddress},
     middlewares::{signer::SignerMiddleware, Middleware},
     signers::Signer,
@@ -248,7 +247,7 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         Ok(self.send_request(GetSmartContractCode, rpc_params![contract_address]).await?)
     }
 
-    async fn get_smart_contract_init(&self, contract_address: &ZilAddress) -> Result<Init, Error> {
+    async fn get_smart_contract_init(&self, contract_address: &ZilAddress) -> Result<Vec<EventParam>, Error> {
         Ok(self.send_request(GetSmartContractInit, rpc_params![contract_address]).await?)
     }
 

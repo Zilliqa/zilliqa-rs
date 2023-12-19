@@ -9,7 +9,7 @@ path = "src/lib.rs"
 [build-dependencies]
 anyhow = "1.0.75"
 convert_case = "0.6.0"
-scilla-parser = "0.4.0"
+scilla-parser = {git = "https://github.com/its-saeed/scilla-parser.git"}
 
 [dependencies]
 anyhow = "1.0.75"

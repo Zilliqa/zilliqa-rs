@@ -1285,9 +1285,8 @@ dependencies = [
 
 [[package]]
 name = "scilla-parser"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "344236140fd8ff88a644d3c3d526073a68c0e281a98f5c59f86a656db75eb497"
+version = "0.6.0"
+source = "git+https://github.com/its-saeed/scilla-parser.git#05cdcee18b9ff7effa85692180d3cbcc478fa32d"
 dependencies = [
  "lexpr",
  "thiserror",

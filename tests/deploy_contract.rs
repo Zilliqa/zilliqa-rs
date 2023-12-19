@@ -6,7 +6,7 @@ use test_context::test_context;
 
 use anyhow::Result;
 use zilliqa_rs::{
-    contract::{self, ContractFactory, Init, Value},
+    contract::{self, ContractFactory, Init, ScillaValue},
     providers::Provider,
     signers::LocalWallet,
 };
@@ -28,7 +28,7 @@ async fn deploy_contract_without_constructor_parameter(ctx: &TestContext) -> Res
 
     let factory = ContractFactory::new(provider.clone());
 
-    let init = Init(vec![Value::new_from_str("_scilla_version", "Uint32", "0")]);
+    let init = Init(vec![ScillaValue::new_from_str("_scilla_version", "Uint32", "0")]);
 
     let contract = factory.deploy_from_file(&ctx.timestamp_contract(), init, None).await.unwrap();
 
@@ -43,8 +43,8 @@ async fn deploy_contract_with_constructor_parameter(ctx: &TestContext) -> Result
     let factory = ContractFactory::new(provider);
 
     let init = Init(vec![
-        Value::new_from_str("_scilla_version", "Uint32", "0"),
-        Value::new_from_str("owner", "ByStr20", &ctx.wallet.address.to_string()),
+        ScillaValue::new_from_str("_scilla_version", "Uint32", "0"),
+        ScillaValue::new_from_str("owner", "ByStr20", &ctx.wallet.address),
     ]);
 
     let contract = factory
@@ -64,8 +64,8 @@ async fn deploy_from_string(ctx: &TestContext) -> Result<()> {
     let factory = ContractFactory::new(provider.clone());
 
     let init = Init(vec![
-        Value::new_from_str("_scilla_version", "Uint32", "0"),
-        Value::new_from_str("owner", "ByStr20", &ctx.wallet.address.to_string()),
+        ScillaValue::new_from_str("_scilla_version", "Uint32", "0"),
+        ScillaValue::new_from_str("owner", "ByStr20", &ctx.wallet.address),
     ]);
 
     let _contract = factory.deploy_str(CONTRACT_CODE.to_string(), init, None).await.unwrap();
@@ -80,8 +80,8 @@ async fn call_a_param_less_transition(ctx: &TestContext) -> Result<()> {
     let factory = ContractFactory::new(provider.clone());
 
     let init = Init(vec![
-        Value::new_from_str("_scilla_version", "Uint32", "0"),
-        Value::new_from_str("owner", "ByStr20", &ctx.wallet.address.to_string()),
+        ScillaValue::new_from_str("_scilla_version", "Uint32", "0"),
+        ScillaValue::new_from_str("owner", "ByStr20", &ctx.wallet.address),
     ]);
 
     let contract = factory
@@ -103,8 +103,8 @@ async fn call_transition_with_single_string_param(ctx: &TestContext) -> Result<(
     let factory = ContractFactory::new(provider.clone());
 
     let init = Init(vec![
-        Value::new_from_str("_scilla_version", "Uint32", "0"),
-        Value::new_from_str("owner", "ByStr20", &ctx.wallet.address.to_string()),
+        ScillaValue::new_from_str("_scilla_version", "Uint32", "0"),
+        ScillaValue::new_from_str("owner", "ByStr20", &ctx.wallet.address),
     ]);
 
     let contract = factory
@@ -113,7 +113,11 @@ async fn call_transition_with_single_string_param(ctx: &TestContext) -> Result<(
         .unwrap();
 
     let response = contract
-        .call("setHello", vec![Value::new_from_str("msg", "String", "heellleeo")], None)
+        .call(
+            "setHello",
+            vec![ScillaValue::new_from_str("msg", "String", "heellleeo")],
+            None,
+        )
         .await?;
 
     println!("{response:?}");
@@ -128,8 +132,8 @@ async fn call_a_param_less_transition_though_the_rust_binding(ctx: &TestContext)
     let factory = ContractFactory::new(provider.clone());
 
     let init = Init(vec![
-        Value::new_from_str("_scilla_version", "Uint32", "0"),
-        Value::new_from_str("owner", "ByStr20", &ctx.wallet.address.to_string()),
+        ScillaValue::new_from_str("_scilla_version", "Uint32", "0"),
+        ScillaValue::new_from_str("owner", "ByStr20", &ctx.wallet.address),
     ]);
 
     let contract = factory

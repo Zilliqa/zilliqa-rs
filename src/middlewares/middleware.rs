@@ -1,5 +1,4 @@
 use crate::{
-    contract::Init,
     crypto::{Signature, ZilAddress},
     providers::{types::*, JsonRpcClient, Provider},
     transaction::Transaction,
@@ -209,7 +208,7 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
         self.inner().get_smart_contract_code(contract_address).await
     }
 
-    async fn get_smart_contract_init(&self, contract_address: &ZilAddress) -> Result<Init, Error> {
+    async fn get_smart_contract_init(&self, contract_address: &ZilAddress) -> Result<Vec<EventParam>, Error> {
         self.inner().get_smart_contract_init(contract_address).await
     }
 

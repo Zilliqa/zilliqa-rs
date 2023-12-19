@@ -1,21 +1,21 @@
 pub mod factory;
+pub mod scilla_value;
 pub mod transition_call;
 use core::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::{ops::Deref, str::FromStr, sync::Arc};
 
 pub use factory::Factory as ContractFactory;
+pub use scilla_value::*;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 pub use transition_call::*;
 
+use crate::providers::EventParam;
 use crate::signers::Signer;
 use crate::{
-    crypto::ZilAddress, middlewares::Middleware, providers::EventParam, providers::GetTransactionResponse,
-    transaction::TransactionParams, Error,
+    crypto::ZilAddress, middlewares::Middleware, providers::GetTransactionResponse, transaction::TransactionParams, Error,
 };
-
-pub type Value = EventParam;
 
 #[derive(Debug)]
 pub struct BaseContract<T: Middleware> {
@@ -24,10 +24,10 @@ pub struct BaseContract<T: Middleware> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Init(pub Vec<Value>);
+pub struct Init(pub Vec<ScillaValue>);
 
 impl Deref for Init {
-    type Target = Vec<Value>;
+    type Target = Vec<ScillaValue>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -38,7 +38,7 @@ impl Deref for Init {
 struct Transition {
     #[serde(rename = "_tag")]
     tag: String,
-    params: Vec<Value>,
+    params: Vec<ScillaValue>,
 }
 
 impl<T: Middleware> BaseContract<T> {
@@ -56,7 +56,7 @@ impl<T: Middleware> BaseContract<T> {
     pub async fn call(
         &self,
         transition: &str,
-        args: Vec<Value>,
+        args: Vec<ScillaValue>,
         overridden_params: Option<TransactionParams>,
     ) -> Result<GetTransactionResponse, Error> {
         TransitionCall::new(transition, &self.address, self.client.clone())
@@ -79,7 +79,7 @@ impl<T: Middleware> BaseContract<T> {
         Err(Error::NoSuchFieldInContractState(field_name.to_string()))
     }
 
-    pub async fn get_init(&self) -> Result<Init, Error> {
+    pub async fn get_init(&self) -> Result<Vec<EventParam>, Error> {
         self.client.get_smart_contract_init(&self.address).await
     }
 
