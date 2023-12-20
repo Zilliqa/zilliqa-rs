@@ -11,6 +11,7 @@ async fn set_get_scenario(ctx: &TestContext) -> anyhow::Result<()> {
     println!("{:?}", contract.address());
     contract.set_bool(true).call().await?;
     contract.set_option_bool(Some(true)).call().await?;
+    contract.set_pair(("hey".to_string(), 123u32)).call().await?;
 
     Ok(())
 }

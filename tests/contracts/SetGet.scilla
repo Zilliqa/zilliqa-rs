@@ -9,6 +9,15 @@ field string_value: String = "test"
 field address_value: ByStr20 = 0x1234567890123456789012345678901234567890
 field option_bool: Option Bool = None {Bool}
 field bool: Bool = False
+(*field list : List Int32 =
+    let nil = Nil {Int32} in
+    let one = Int32 1 in
+    Cons {Int32} one nil*)
+ 
+field pair: Pair String Uint32 =
+              let s1 = "Hello" in
+              let num = Uint32 2 in
+              Pair {String Uint32} s1 num
 
 transition set_uint128(v : Uint128)
   value := v
@@ -52,4 +61,12 @@ transition get_bool()
   v <- bool;
   ev = {_eventname: "get_bool"; sender: _sender; value: v};
   event ev
+end
+
+(*transition set_list(v : List Int32)
+    list := v
+end*)
+
+transition set_pair(v : Pair String Uint32)
+    pair := v
 end

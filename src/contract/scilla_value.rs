@@ -178,6 +178,20 @@ impl ToScillaValue for bool {
     }
 }
 
+impl<T: ToScillaValue, U: ToScillaValue> ToScillaValue for (T, U) {
+    fn to_value(self) -> Value {
+        Value::Adt(AdtValue {
+            constructor: "Pair".to_string(),
+            argtypes: vec![T::scilla_type(), U::scilla_type()],
+            arguments: vec![self.0.to_value(), self.1.to_value()],
+        })
+    }
+
+    fn scilla_type() -> String {
+        format!("Pair ({} {})", T::scilla_type(), U::scilla_type())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::ToScillaValue;
@@ -199,5 +213,16 @@ mod tests {
             scilla_value
         );
         assert_eq!("Option (Bool)", Option::<bool>::scilla_type());
+    }
+
+    #[test]
+    fn test_pair_value() {
+        let scilla_value = ("hello".to_string(), 123u32).to_value();
+        let scilla_value = serde_json::to_string(&scilla_value).unwrap();
+        assert_eq!(
+            r#"{"constructor":"Pair","argtypes":["String","Uint32"],"arguments":["hello","123"]}"#,
+            scilla_value
+        );
+        assert_eq!("Pair (String Uint32)", <(String, u32)>::scilla_type());
     }
 }

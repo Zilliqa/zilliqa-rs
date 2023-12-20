@@ -63,7 +63,7 @@ fn scilla_type_to_rust(scilla_type: &scilla_parser::Type) -> String {
         scilla_parser::Type::Bool => "bool".to_string(),
         scilla_parser::Type::Option(t) => format!("Option<{}>", scilla_type_to_rust(t)),
         scilla_parser::Type::Pair(a, b) => {
-            format!("({}, {})", scilla_type_to_rust_for_state(a), scilla_type_to_rust(b))
+            format!("({}, {})", scilla_type_to_rust(a), scilla_type_to_rust(b))
         }
         scilla_parser::Type::List(t) => format!("Vec<{}>", scilla_type_to_rust(t)),
     }
