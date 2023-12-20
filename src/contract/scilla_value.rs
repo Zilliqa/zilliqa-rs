@@ -123,7 +123,7 @@ impl<T: ToScillaValue, U: ToScillaValue> ToScillaValue for (T, U) {
     }
 
     fn scilla_type() -> String {
-        format!("Pair ({} {})", T::scilla_type(), U::scilla_type())
+        format!("Pair {} {}", T::scilla_type(), U::scilla_type())
     }
 }
 
@@ -162,7 +162,7 @@ impl<T: ToScillaValue> ToScillaValue for [T] {
     }
 
     fn scilla_type() -> String {
-        format!("List ({})", T::scilla_type())
+        format!("(List ({}))", T::scilla_type())
     }
 }
 
@@ -182,7 +182,17 @@ mod tests {
 
     use serde_json::json;
 
+    use crate::crypto::ZilAddress;
+
     use super::ToScillaValue;
+
+    #[test]
+    fn check_scilla_types() {
+        assert_eq!(
+            Vec::<(ZilAddress, Vec<(ZilAddress, u32)>)>::scilla_type(),
+            "(List (Pair ByStr20 (List (Pair ByStr20 Uint32))))"
+        );
+    }
 
     #[test]
     fn test_bool_value() {
@@ -205,7 +215,7 @@ mod tests {
 
     #[test]
     fn test_pair_value() {
-        assert_eq!("Pair (String Uint32)", <(String, u32)>::scilla_type());
+        assert_eq!("Pair String Uint32", <(String, u32)>::scilla_type());
 
         let scilla_value = ("hello".to_string(), 123u32).to_value();
         let scilla_value = serde_json::to_string(&scilla_value).unwrap();
@@ -238,5 +248,16 @@ mod tests {
         let scilla_value = vec!["salam".to_string(), "salam2".to_string()].to_value();
         let scilla_value = serde_json::to_string(&scilla_value).unwrap();
         assert_eq!("{\"constructor\":\"Cons\",\"argtypes\":[\"String\"],\"arguments\":[\"salam\",{\"constructor\":\"Cons\",\"argtypes\":[\"String\"],\"arguments\":[\"salam2\",{\"constructor\":\"Nil\",\"argtypes\":[\"String\"],\"arguments\":[]}]}]}", scilla_value);
+    }
+
+    #[test]
+    // FIXME
+    fn test_list_of_pair_value() {
+        assert_eq!("List (Pair String Uint128)", Vec::<(String, u128)>::scilla_type());
+        let scilla_value = vec![("salam".to_string(), 1u128), ("salam2".to_string(), 2u128)].to_value();
+        // let scilla_value = serde_json::to_string(&scilla_value).unwrap();
+        println!("{}", serde_json::to_string_pretty(&scilla_value).unwrap());
+        // assert_eq!("k1", scilla_value);
+        // assert_eq!("{\"constructor\":\"Cons\",\"argtypes\":[\"String\"],\"arguments\":[\"salam\",{\"constructor\":\"Cons\",\"argtypes\":[\"String\"],\"arguments\":[\"salam2\",{\"constructor\":\"Nil\",\"argtypes\":[\"String\"],\"arguments\":[]}]}]}", scilla_value);
     }
 }

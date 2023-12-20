@@ -1,0 +1,54 @@
+scilla_version 0
+(***************************************************)
+(*               Basic setter and getter           *)
+(***************************************************)
+contract CallTransition
+()
+
+transition call_uint32(v : Uint32)
+end
+
+transition call_uint64(v : Uint64)
+end
+
+transition call_uint128(v : Uint128)
+end
+
+transition call_uint256(v : Uint256)
+end
+
+transition call_int32(v : Int32)
+end
+
+transition call_int64(v : Int64)
+end
+
+transition call_int128(v : Int128)
+end
+
+transition call_string(v : String)
+end
+
+transition call_address(v : ByStr20)
+end
+
+transition call_option_bool(v : (Option Bool))
+end
+
+transition call_bool(v : Bool)
+end
+
+transition call_pair(v : Pair String Uint32)
+end
+
+transition call_list(v : List ByStr20)
+end
+
+transition call_list_2(v: (List (Pair ByStr20 (List (Pair ByStr20 Uint32)))))
+end
+
+transition call_list_3(v : (List (Pair String String)))
+end
+
+transition call_list_4(v: (List (Pair ByStr20 (List (Pair ByStr20 (List (Pair Uint32 Uint128)))))))
+end
