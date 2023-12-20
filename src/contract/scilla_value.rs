@@ -48,122 +48,38 @@ pub struct AdtValue {
 
 // TODO: Set better names for trait functions
 pub trait ToScillaValue {
-    fn to_value(self) -> Value;
+    fn to_value(&self) -> Value;
     fn scilla_type() -> String;
 }
 
-impl ToScillaValue for i32 {
-    fn to_value(self) -> Value {
-        Value::Primitive(self.to_string())
-    }
+macro_rules! to_scilla_value_for {
+    ($t:ty, $scilla_type:expr) => {
+        impl ToScillaValue for $t {
+            fn to_value(&self) -> Value {
+                Value::Primitive(self.to_string())
+            }
 
-    fn scilla_type() -> String {
-        "Int32".to_string()
-    }
+            fn scilla_type() -> String {
+                $scilla_type.to_string()
+            }
+        }
+    };
 }
 
-impl ToScillaValue for i64 {
-    fn to_value(self) -> Value {
-        Value::Primitive(self.to_string())
-    }
-
-    fn scilla_type() -> String {
-        "Int64".to_string()
-    }
-}
-
-impl ToScillaValue for i128 {
-    fn to_value(self) -> Value {
-        Value::Primitive(self.to_string())
-    }
-
-    fn scilla_type() -> String {
-        "Int128".to_string()
-    }
-}
-
-impl ToScillaValue for u32 {
-    fn to_value(self) -> Value {
-        Value::Primitive(self.to_string())
-    }
-
-    fn scilla_type() -> String {
-        "Uint32".to_string()
-    }
-}
-
-impl ToScillaValue for u64 {
-    fn to_value(self) -> Value {
-        Value::Primitive(self.to_string())
-    }
-
-    fn scilla_type() -> String {
-        "Uint64".to_string()
-    }
-}
-
-impl ToScillaValue for u128 {
-    fn to_value(self) -> Value {
-        Value::Primitive(self.to_string())
-    }
-
-    fn scilla_type() -> String {
-        "Uint128".to_string()
-    }
-}
-
-impl ToScillaValue for primitive_types::U256 {
-    fn to_value(self) -> Value {
-        Value::Primitive(self.to_string())
-    }
-
-    fn scilla_type() -> String {
-        "Uint256".to_string()
-    }
-}
-
-impl ToScillaValue for String {
-    fn to_value(self) -> Value {
-        Value::Primitive(self)
-    }
-
-    fn scilla_type() -> String {
-        "String".to_string()
-    }
-}
-
-impl ToScillaValue for &str {
-    fn to_value(self) -> Value {
-        Value::Primitive(self.to_string())
-    }
-
-    fn scilla_type() -> String {
-        "String".to_string()
-    }
-}
-
-impl ToScillaValue for &ZilAddress {
-    fn to_value(self) -> Value {
-        Value::Primitive(self.to_string())
-    }
-
-    fn scilla_type() -> String {
-        "ByStr20".to_string()
-    }
-}
-
-impl ToScillaValue for ZilAddress {
-    fn to_value(self) -> Value {
-        Value::Primitive(self.to_string())
-    }
-
-    fn scilla_type() -> String {
-        "ByStr20".to_string()
-    }
-}
+to_scilla_value_for!(i32, "Int32");
+to_scilla_value_for!(i64, "Int64");
+to_scilla_value_for!(i128, "Int128");
+to_scilla_value_for!(u32, "Uint32");
+to_scilla_value_for!(u64, "Uint64");
+to_scilla_value_for!(u128, "Uint128");
+to_scilla_value_for!(primitive_types::U256, "Uint256");
+to_scilla_value_for!(String, "String");
+to_scilla_value_for!(&str, "String");
+to_scilla_value_for!(ZilAddress, "ByStr20");
+to_scilla_value_for!(&ZilAddress, "ByStr20");
 
 impl<T: ToScillaValue> ToScillaValue for Option<T> {
-    fn to_value(self) -> Value {
+    fn to_value(&self) -> Value {
         match self {
             Some(v) => Value::Adt(AdtValue {
                 constructor: "Some".to_string(),
@@ -184,9 +100,9 @@ impl<T: ToScillaValue> ToScillaValue for Option<T> {
 }
 
 impl ToScillaValue for bool {
-    fn to_value(self) -> Value {
+    fn to_value(&self) -> Value {
         Value::Adt(AdtValue {
-            constructor: if self { "True".to_string() } else { "False".to_string() },
+            constructor: if *self { "True".to_string() } else { "False".to_string() },
             argtypes: vec![],
             arguments: vec![],
         })
@@ -198,7 +114,7 @@ impl ToScillaValue for bool {
 }
 
 impl<T: ToScillaValue, U: ToScillaValue> ToScillaValue for (T, U) {
-    fn to_value(self) -> Value {
+    fn to_value(&self) -> Value {
         Value::Adt(AdtValue {
             constructor: "Pair".to_string(),
             argtypes: vec![T::scilla_type(), U::scilla_type()],
@@ -212,9 +128,9 @@ impl<T: ToScillaValue, U: ToScillaValue> ToScillaValue for (T, U) {
 }
 
 impl<K: ToScillaValue, V: ToScillaValue> ToScillaValue for HashMap<K, V> {
-    fn to_value(self) -> Value {
+    fn to_value(&self) -> Value {
         Value::Map(
-            self.into_iter()
+            self.iter()
                 .map(|(key, value)| KeyVal {
                     key: key.to_value(),
                     val: value.to_value(),
@@ -225,6 +141,38 @@ impl<K: ToScillaValue, V: ToScillaValue> ToScillaValue for HashMap<K, V> {
 
     fn scilla_type() -> String {
         format!("Map {} {}", K::scilla_type(), V::scilla_type())
+    }
+}
+
+impl<T: ToScillaValue> ToScillaValue for [T] {
+    fn to_value(&self) -> Value {
+        if self.is_empty() {
+            Value::Adt(AdtValue {
+                constructor: "Nil".to_string(),
+                argtypes: vec![T::scilla_type()],
+                arguments: vec![],
+            })
+        } else {
+            Value::Adt(AdtValue {
+                constructor: "Cons".to_string(),
+                argtypes: vec![T::scilla_type()],
+                arguments: vec![self[0].to_value(), self[1..].to_value()],
+            })
+        }
+    }
+
+    fn scilla_type() -> String {
+        format!("List ({})", T::scilla_type())
+    }
+}
+
+impl<T: ToScillaValue> ToScillaValue for Vec<T> {
+    fn to_value(&self) -> Value {
+        self[..].to_value()
+    }
+
+    fn scilla_type() -> String {
+        <[T]>::scilla_type()
     }
 }
 
@@ -282,5 +230,13 @@ mod tests {
         let scilla_value = vikings.to_value();
         let scilla_value = serde_json::to_string(&scilla_value).unwrap();
         assert_eq!(serde_json::to_string(&json).unwrap(), scilla_value);
+    }
+
+    #[test]
+    fn test_list_value() {
+        assert_eq!("List (String)", Vec::<String>::scilla_type());
+        let scilla_value = vec!["salam".to_string(), "salam2".to_string()].to_value();
+        let scilla_value = serde_json::to_string(&scilla_value).unwrap();
+        assert_eq!("{\"constructor\":\"Cons\",\"argtypes\":[\"String\"],\"arguments\":[\"salam\",{\"constructor\":\"Cons\",\"argtypes\":[\"String\"],\"arguments\":[\"salam2\",{\"constructor\":\"Nil\",\"argtypes\":[\"String\"],\"arguments\":[]}]}]}", scilla_value);
     }
 }
