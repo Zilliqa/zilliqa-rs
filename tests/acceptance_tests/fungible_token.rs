@@ -8,7 +8,7 @@ async fn fungible_token_scenario(ctx: &TestContext) -> anyhow::Result<()> {
     let provider = ctx.provider();
     let contract = contract::FungibleToken::deploy(
         provider.clone(),
-        ctx.wallet.address.to_string(),
+        ctx.wallet.address.clone(),
         "Sindal Token".to_string(),
         "SDT".to_string(),
         2,
@@ -29,14 +29,14 @@ async fn fungible_token_scenario(ctx: &TestContext) -> anyhow::Result<()> {
 
     // Should be possible to increase allowance by contract owner
     let alice = LocalWallet::create_random()?;
-    contract.increase_allowance(alice.address.to_string(), 100).call().await?;
+    contract.increase_allowance(alice.address.clone(), 100).call().await?;
     assert_eq!(
         contract.allowances().await?[&ctx.wallet.address.to_string().to_lowercase()][&alice.address.to_string().to_lowercase()],
         "100"
     );
 
     // Should be possible to decrease allowance by contract owner
-    contract.decrease_allowance(alice.address.to_string(), 10).call().await?;
+    contract.decrease_allowance(alice.address.clone(), 10).call().await?;
     assert_eq!(
         contract.allowances().await?[&ctx.wallet.address.to_string().to_lowercase()][&alice.address.to_string().to_lowercase()],
         "90"

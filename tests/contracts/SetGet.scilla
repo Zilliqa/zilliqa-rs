@@ -19,6 +19,8 @@ field pair: Pair String Uint32 =
               let num = Uint32 2 in
               Pair {String Uint32} s1 num
 
+field balances: Map ByStr20 Uint128 = Emp ByStr20 Uint128
+
 transition set_uint128(v : Uint128)
   value := v
 end

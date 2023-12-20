@@ -22,10 +22,7 @@ async fn send_zil_scenario(ctx: &TestContext) -> anyhow::Result<()> {
 
     // Should be possible to fund a user
     let wallet = LocalWallet::create_random()?;
-    contract
-        .fund_user(wallet.address.to_string(), parse_zil("0.1")?)
-        .call()
-        .await?;
+    contract.fund_user(wallet.address.clone(), parse_zil("0.1")?).call().await?;
     assert_eq!(
         provider.get_balance(&wallet.address).await?.balance,
         parse_zil("0.1")?,

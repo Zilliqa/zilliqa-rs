@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::Deserialize;
 
 use crate::crypto::ZilAddress;
@@ -6,7 +8,14 @@ use crate::crypto::ZilAddress;
 #[serde(untagged)]
 pub enum Value {
     Primitive(String),
+    Map(Vec<KeyVal>),
     Adt(AdtValue),
+}
+
+#[derive(serde::Serialize, Debug, Clone, Deserialize)]
+pub struct KeyVal {
+    key: Value,
+    val: Value,
 }
 
 #[derive(serde::Serialize, Debug, Clone, Deserialize)]
@@ -143,6 +152,16 @@ impl ToScillaValue for &ZilAddress {
     }
 }
 
+impl ToScillaValue for ZilAddress {
+    fn to_value(self) -> Value {
+        Value::Primitive(self.to_string())
+    }
+
+    fn scilla_type() -> String {
+        "ByStr20".to_string()
+    }
+}
+
 impl<T: ToScillaValue> ToScillaValue for Option<T> {
     fn to_value(self) -> Value {
         match self {
@@ -192,8 +211,29 @@ impl<T: ToScillaValue, U: ToScillaValue> ToScillaValue for (T, U) {
     }
 }
 
+impl<K: ToScillaValue, V: ToScillaValue> ToScillaValue for HashMap<K, V> {
+    fn to_value(self) -> Value {
+        Value::Map(
+            self.into_iter()
+                .map(|(key, value)| KeyVal {
+                    key: key.to_value(),
+                    val: value.to_value(),
+                })
+                .collect(),
+        )
+    }
+
+    fn scilla_type() -> String {
+        format!("Map {} {}", K::scilla_type(), V::scilla_type())
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
+    use serde_json::json;
+
     use super::ToScillaValue;
 
     #[test]
@@ -217,12 +257,30 @@ mod tests {
 
     #[test]
     fn test_pair_value() {
+        assert_eq!("Pair (String Uint32)", <(String, u32)>::scilla_type());
+
         let scilla_value = ("hello".to_string(), 123u32).to_value();
         let scilla_value = serde_json::to_string(&scilla_value).unwrap();
         assert_eq!(
             r#"{"constructor":"Pair","argtypes":["String","Uint32"],"arguments":["hello","123"]}"#,
             scilla_value
         );
-        assert_eq!("Pair (String Uint32)", <(String, u32)>::scilla_type());
+    }
+
+    #[test]
+    fn test_map_value() {
+        assert_eq!("Map (String) (Int32)", HashMap::<String, i32>::scilla_type());
+
+        let mut vikings = HashMap::new();
+        vikings.insert("Denmark", 24);
+
+        let json = json!([
+            {
+                "key": "Denmark", "val": "24",
+            },
+        ]);
+        let scilla_value = vikings.to_value();
+        let scilla_value = serde_json::to_string(&scilla_value).unwrap();
+        assert_eq!(serde_json::to_string(&json).unwrap(), scilla_value);
     }
 }

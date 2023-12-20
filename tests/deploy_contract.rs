@@ -162,7 +162,8 @@ async fn deploy_a_paramless_contract_through_the_rust_binding(ctx: &TestContext)
 #[tokio::test]
 async fn deploy_a_one_param_contract_through_the_rust_binding(ctx: &TestContext) -> Result<()> {
     let provider = ctx.provider();
-    let contract = contract::HelloWorld::deploy(provider, ctx.wallet.address.to_string()).await?;
+    // TODO: ZilAddress clone can be removed
+    let contract = contract::HelloWorld::deploy(provider, ctx.wallet.address.clone()).await?;
 
     let response = contract.get_hello().call().await?;
 
@@ -179,7 +180,7 @@ async fn deploy_a_one_param_contract_through_the_rust_binding(ctx: &TestContext)
 #[tokio::test]
 async fn call_transition_with_single_string_param_using_rust_binding(ctx: &TestContext) -> Result<()> {
     let provider = ctx.provider();
-    let contract = contract::HelloWorld::deploy(provider, ctx.wallet.address.to_string()).await?;
+    let contract = contract::HelloWorld::deploy(provider, ctx.wallet.address.clone()).await?;
 
     let response = contract.set_hello("heellleeo".to_string()).call().await?;
 
@@ -198,7 +199,7 @@ async fn call_transition_with_a_different_signer(ctx: &TestContext) -> Result<()
             .with_chain_id(ctx.chain_id)
             .with_signer(wallet.clone()),
     );
-    let contract = contract::HelloWorld::deploy(provider, ctx.wallet.address.to_string()).await?;
+    let contract = contract::HelloWorld::deploy(provider, ctx.wallet.address.clone()).await?;
 
     let wallet = LocalWallet::new("589417286a3213dceb37f8f89bd164c3505a4cec9200c61f7c6db13a30a71b45").unwrap();
     let new_provider = Arc::new(
