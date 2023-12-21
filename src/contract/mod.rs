@@ -25,10 +25,10 @@ pub struct BaseContract<T: Middleware> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Init(pub Vec<ScillaValue>);
+pub struct Init(pub Vec<ScillaVariable>);
 
 impl Deref for Init {
-    type Target = Vec<ScillaValue>;
+    type Target = Vec<ScillaVariable>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -39,7 +39,7 @@ impl Deref for Init {
 struct Transition {
     #[serde(rename = "_tag")]
     tag: String,
-    params: Vec<ScillaValue>,
+    params: Vec<ScillaVariable>,
 }
 
 impl<T: Middleware> BaseContract<T> {
@@ -57,7 +57,7 @@ impl<T: Middleware> BaseContract<T> {
     pub async fn call(
         &self,
         transition: &str,
-        args: Vec<ScillaValue>,
+        args: Vec<ScillaVariable>,
         overridden_params: Option<TransactionParams>,
     ) -> Result<GetTransactionResponse, Error> {
         TransitionCall::new(transition, &self.address, self.client.clone())

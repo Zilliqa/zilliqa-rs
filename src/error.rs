@@ -45,6 +45,9 @@ pub enum Error {
     #[error("Field {0} doesn't exist in the contract init.")]
     NoSuchFieldInContractInit(String),
 
+    #[error("Failed to parse scilla value {0} as {1} type")]
+    FailedToParseScillaValue(String, String),
+
     #[error("Failed to parse {0}.")]
     FailedToParseContractField(String),
 

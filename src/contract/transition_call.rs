@@ -9,13 +9,13 @@ use crate::{
     Error,
 };
 
-use super::{ScillaValue, Transition};
+use super::{ScillaVariable, Transition};
 
 #[derive(Default, Debug)]
 pub struct TransitionCall<T: Middleware> {
     name: String,
     contract_address: ZilAddress,
-    args: Option<Vec<ScillaValue>>,
+    args: Option<Vec<ScillaVariable>>,
     overridden_params: TransactionParams,
     client: Arc<T>,
 }
@@ -31,7 +31,7 @@ impl<T: Middleware> TransitionCall<T> {
         }
     }
 
-    pub fn args(&mut self, args: Vec<ScillaValue>) -> &mut Self {
+    pub fn args(&mut self, args: Vec<ScillaVariable>) -> &mut Self {
         self.args = Some(args);
         self
     }

@@ -1,0 +1,73 @@
+scilla_version 0
+(***************************************************)
+(*               Basic setter and getter           *)
+(***************************************************)
+contract GetFields
+(
+    contract_owner: ByStr20,
+    init_supply : Uint128
+)
+
+(*Integer fields*)
+field field_uint32: Uint32 = Uint32 0
+field field_uint64: Uint64 = Uint64 1
+field field_uint128: Uint128 = Uint128 2
+field field_uint256: Uint256 = Uint256 3
+field field_int32: Int32 = Int32 -1
+field field_int64: Int64 = Int64 -4
+field field_int128: Int128 = Int128 -2
+field field_bnum: BNum = BNum 101
+
+(*String fields*)
+field field_string: String = "test"
+field field_address: ByStr20 = 0x1234567890123456789012345678901234567890
+
+(*ADT*)
+field field_bool_false: Bool = False
+field field_bool_true: Bool = True
+field field_option_bystr20_none: Option ByStr20 = None {ByStr20}
+field field_option_bystr20_some: Option ByStr20 =
+  let addr = 0x1234567890123456789012345678901234567890 in
+  Some {ByStr20} addr
+
+field field_option_int32_some: Option Int32 =
+  let ten = Int32 10 in
+  Some {Int32} ten
+
+field field_option_bool_some: Option Bool =
+  let v = True in
+  Some {Bool} v
+
+field field_pair: Pair String Uint32 =
+              let s1 = "Hello" in
+              let num = Uint32 2 in
+              Pair {String Uint32} s1 num
+
+
+field balances: Map ByStr20 Uint128 
+  = let emp_map = Emp ByStr20 Uint128 in
+    builtin put emp_map contract_owner init_supply
+
+field field_list : List Int32 =
+    let nil = Nil {Int32} in
+    let one = Int32 1 in
+    let l = Cons {Int32} one nil in
+    let two = Int32 2 in
+    Cons {Int32} two l
+
+(*
+
+transition call_list(v : List ByStr20)
+end
+
+transition call_list_2(v: (List (Pair ByStr20 (List (Pair ByStr20 Uint32)))))
+end
+
+transition call_list_3(v: (List (Pair String String)))
+end
+
+transition call_list_4(v: (List (Pair ByStr20 (List (Pair ByStr20 (List (Pair Uint32 Uint128)))))))
+end
+
+transition call_list_5(v: (List (Pair ByStr20 (List (Pair BNum Uint128)))))
+end *)

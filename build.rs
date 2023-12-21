@@ -11,34 +11,6 @@ use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 
-fn scilla_type_to_rust_for_state(scilla_type: &scilla_parser::Type) -> String {
-    match scilla_type {
-        scilla_parser::Type::Int32 => "String".to_string(),
-        scilla_parser::Type::Int64 => "String".to_string(),
-        scilla_parser::Type::Int128 => "String".to_string(),
-        scilla_parser::Type::Int256 => "String".to_string(),
-        scilla_parser::Type::Uint32 => "String".to_string(),
-        scilla_parser::Type::Uint64 => "String".to_string(),
-        scilla_parser::Type::Uint128 => "String".to_string(),
-        scilla_parser::Type::Uint256 => "String".to_string(),
-        scilla_parser::Type::String => "String".to_string(),
-        scilla_parser::Type::BNum => "String".to_string(),
-        scilla_parser::Type::Map(key, value) => format!(
-            "HashMap<{}, {}>",
-            scilla_type_to_rust_for_state(key),
-            scilla_type_to_rust_for_state(value)
-        ),
-        scilla_parser::Type::ByStr(_) => "String".to_string(),
-        scilla_parser::Type::Other(_) => "String".to_string(),
-        scilla_parser::Type::Bool => "String".to_string(),
-        scilla_parser::Type::Option(t) => format!("Option<{}>", scilla_type_to_rust_for_state(t)),
-        scilla_parser::Type::Pair(a, b) => {
-            format!("({}, {})", scilla_type_to_rust_for_state(a), scilla_type_to_rust_for_state(b))
-        }
-        scilla_parser::Type::List(t) => format!("Vec<{}>", scilla_type_to_rust_for_state(t)),
-    }
-}
-
 fn scilla_type_to_rust(scilla_type: &scilla_parser::Type) -> String {
     match scilla_type {
         scilla_parser::Type::Int32 => "i32".to_string(),
@@ -56,10 +28,10 @@ fn scilla_type_to_rust(scilla_type: &scilla_parser::Type) -> String {
         scilla_parser::Type::ByStr(_) => "String".to_string(),
         scilla_parser::Type::Other(_) => {
             add_to_log(&format!(
-                "Failed to map {:?} to any rust type. `ScillaValue` is used instead.",
+                "Failed to map {:?} to any rust type. `ScillaVariable` is used instead.",
                 scilla_type
             ));
-            "ScillaValue".to_string()
+            "ScillaVariable".to_string()
         }
         scilla_parser::Type::Bool => "bool".to_string(),
         scilla_parser::Type::Option(t) => format!("Option<{}>", scilla_type_to_rust(t)),
@@ -87,10 +59,7 @@ fn transition_to_rust_function(transition: &Transition) -> String {
 fn fields_to_contract_state_struct(fields: &FieldList) -> String {
     fields
         .iter()
-        .map(|field| {
-            let rust_type = scilla_type_to_rust_for_state(&field.r#type);
-            format!("    pub {}: {},", field.name, rust_type)
-        })
+        .map(|field| format!("    pub {}: ScillaValue,", field.name))
         .fold("".to_string(), |acc, e| format!("{acc}\n{e}"))
 }
 
@@ -99,8 +68,8 @@ fn get_contract_init_fields_getters(init_params: &FieldList) -> String {
         .iter()
         .map(|field| {
             let rust_type = scilla_type_to_rust(&field.r#type);
-            // If rust type is `ScillaValue` it means we couldn't map the scilla type to a rust one. So we consider it as a string
-            let rust_type = if rust_type == "ScillaValue" {
+            // If rust type is `ScillaVariable` it means we couldn't map the scilla type to a rust one. So we consider it as a string
+            let rust_type = if rust_type == "ScillaVariable" {
                 "String".to_string()
             } else {
                 rust_type
@@ -147,12 +116,12 @@ fn fields_to_values(params: &FieldList) -> String {
         let delim = if acc.is_empty() { "" } else { ", " };
         let rust_type = scilla_type_to_rust(&e.r#type);
         match rust_type.as_str() {
-            "ScillaValue" => {
+            "ScillaVariable" => {
                 format!(r#"{acc}{delim}{} "#, e.name.to_case(convert_case::Case::Snake))
             }
             _ => {
                 format!(
-                    r#"{acc}{delim}ScillaValue::new("{}".to_string(), "{}".to_string(), {}.to_value()) "#,
+                    r#"{acc}{delim}ScillaVariable::new("{}".to_string(), "{}".to_string(), {}.to_value()) "#,
                     e.name,
                     e.r#type,
                     e.name.to_case(convert_case::Case::Snake)
@@ -179,9 +148,9 @@ fn transitions_to_transition_call_object(transitions: &Vec<Transition>) -> Strin
 fn to_string_for_contract_field_getters(contract_fields: &FieldList, contract_name: &str) -> String {
     contract_fields.iter()
             .map(|field| {
-                let rust_type = scilla_type_to_rust_for_state(&field.r#type);
+                let rust_type = scilla_type_to_rust(&field.r#type);
                 format!(
-                    "    pub async fn {}(&self) -> Result<{rust_type}, Error> {{\n        Ok(self.base.get_state::<{contract_name}State>().await?.{})\n    }}",
+                    "    pub async fn {}(&self) -> Result<{rust_type}, Error> {{\n        self.base.get_state::<{contract_name}State>().await?.{}.try_into_rust_type()\n    }}",
                     field.name, field.name
                 )
             })
@@ -215,7 +184,7 @@ impl<T: Middleware> {contract_name}<T> {{
     pub async fn deploy(client: Arc<T> {contract_deployment_params}) -> Result<Self, Error> {{
         let factory = ContractFactory::new(client.clone());
         let init = Init(vec![
-            ScillaValue::new("_scilla_version".to_string(), "Uint32".to_string(), "0".to_value()),
+            ScillaVariable::new("_scilla_version".to_string(), "Uint32".to_string(), "0".to_value()),
             {contract_deployment_params_for_init}
         ]);
 

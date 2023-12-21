@@ -1,32 +1,33 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, hash::Hash};
 
 use serde::Deserialize;
 
-use crate::{core::BNum, crypto::ZilAddress};
+use crate::{core::BNum, crypto::ZilAddress, Error};
 
 #[derive(serde::Serialize, Debug, Clone, Deserialize)]
 #[serde(untagged)]
-pub enum Value {
+pub enum ScillaValue {
     Primitive(String),
-    Map(Vec<KeyVal>),
     Adt(AdtValue),
+    Map(HashMap<String, ScillaValue>),
+    List(Vec<ScillaValue>),
 }
 
 #[derive(serde::Serialize, Debug, Clone, Deserialize)]
 pub struct KeyVal {
-    key: Value,
-    val: Value,
+    key: ScillaValue,
+    val: ScillaValue,
 }
 
 #[derive(serde::Serialize, Debug, Clone, Deserialize)]
-pub struct ScillaValue {
+pub struct ScillaVariable {
     pub vname: String,
     pub r#type: String,
-    pub value: Value,
+    pub value: ScillaValue,
 }
 
-impl ScillaValue {
-    pub fn new(vname: String, r#type: String, value: Value) -> Self {
+impl ScillaVariable {
+    pub fn new(vname: String, r#type: String, value: ScillaValue) -> Self {
         Self { vname, value, r#type }
     }
 
@@ -43,20 +44,56 @@ impl ScillaValue {
 pub struct AdtValue {
     constructor: String,
     argtypes: Vec<String>,
-    arguments: Vec<Value>,
+    arguments: Vec<ScillaValue>,
 }
 
 // TODO: Set better names for trait functions
 pub trait ToScillaValue {
-    fn to_value(&self) -> Value;
+    fn to_value(&self) -> ScillaValue;
     fn scilla_type() -> String;
+}
+
+pub trait TryFromScillaValue: Sized {
+    fn try_from_scilla_value(value: ScillaValue) -> Result<Self, Error>;
+}
+
+// Can't use std TryFrom because it conflicts with std implementation for option, map, etc
+pub trait TryIntoRustType<T>: Sized {
+    fn try_into_rust_type(self) -> Result<T, Error>;
+}
+
+impl<T> TryIntoRustType<T> for ScillaValue
+where
+    T: TryFromScillaValue,
+{
+    fn try_into_rust_type(self) -> Result<T, Error> {
+        T::try_from_scilla_value(self)
+    }
+}
+
+macro_rules! from_scilla_value_for {
+    ($t:ty) => {
+        impl TryFromScillaValue for $t {
+            fn try_from_scilla_value(value: ScillaValue) -> Result<$t, Error> {
+                match value {
+                    ScillaValue::Primitive(s) => s
+                        .parse()
+                        .map_err(|_| Error::FailedToParseScillaValue(s, stringify!($t).to_string())),
+                    _ => Err(Error::FailedToParseScillaValue(
+                        serde_json::to_string(&value)?,
+                        stringify!($t).to_string(),
+                    )),
+                }
+            }
+        }
+    };
 }
 
 macro_rules! to_scilla_value_for {
     ($t:ty, $scilla_type:expr) => {
         impl ToScillaValue for $t {
-            fn to_value(&self) -> Value {
-                Value::Primitive(self.to_string())
+            fn to_value(&self) -> ScillaValue {
+                ScillaValue::Primitive(self.to_string())
             }
 
             fn scilla_type() -> String {
@@ -79,15 +116,26 @@ to_scilla_value_for!(ZilAddress, "ByStr20");
 to_scilla_value_for!(&ZilAddress, "ByStr20");
 to_scilla_value_for!(BNum, "BNum");
 
+from_scilla_value_for!(i32);
+from_scilla_value_for!(i64);
+from_scilla_value_for!(i128);
+from_scilla_value_for!(u32);
+from_scilla_value_for!(u64);
+from_scilla_value_for!(u128);
+from_scilla_value_for!(primitive_types::U256);
+from_scilla_value_for!(String);
+from_scilla_value_for!(ZilAddress);
+from_scilla_value_for!(BNum);
+
 impl<T: ToScillaValue> ToScillaValue for Option<T> {
-    fn to_value(&self) -> Value {
+    fn to_value(&self) -> ScillaValue {
         match self {
-            Some(v) => Value::Adt(AdtValue {
+            Some(v) => ScillaValue::Adt(AdtValue {
                 constructor: "Some".to_string(),
                 argtypes: vec![T::scilla_type()],
                 arguments: vec![v.to_value()],
             }),
-            None => Value::Adt(AdtValue {
+            None => ScillaValue::Adt(AdtValue {
                 constructor: "None".to_string(),
                 argtypes: vec![T::scilla_type()],
                 arguments: vec![],
@@ -100,9 +148,26 @@ impl<T: ToScillaValue> ToScillaValue for Option<T> {
     }
 }
 
+impl<T> TryFromScillaValue for Option<T>
+where
+    T: TryFromScillaValue,
+{
+    fn try_from_scilla_value(value: ScillaValue) -> Result<Self, Error> {
+        let error = Error::FailedToParseScillaValue(serde_json::to_string(&value)?, "Option".to_string());
+        if let ScillaValue::Adt(adt) = &value {
+            match adt.constructor.as_str() {
+                "Some" => return Ok(Some(adt.arguments.get(0).ok_or(error)?.to_owned().try_into_rust_type()?)),
+                "None" => return Ok(None),
+                _ => (),
+            }
+        }
+        Err(error)
+    }
+}
+
 impl ToScillaValue for bool {
-    fn to_value(&self) -> Value {
-        Value::Adt(AdtValue {
+    fn to_value(&self) -> ScillaValue {
+        ScillaValue::Adt(AdtValue {
             constructor: if *self { "True".to_string() } else { "False".to_string() },
             argtypes: vec![],
             arguments: vec![],
@@ -114,9 +179,25 @@ impl ToScillaValue for bool {
     }
 }
 
+impl TryFromScillaValue for bool {
+    fn try_from_scilla_value(value: ScillaValue) -> Result<Self, Error> {
+        if let ScillaValue::Adt(adt) = &value {
+            match adt.constructor.as_str() {
+                "True" => return Ok(true),
+                "False" => return Ok(false),
+                _ => (),
+            }
+        }
+        Err(Error::FailedToParseScillaValue(
+            serde_json::to_string(&value)?,
+            "bool".to_string(),
+        ))
+    }
+}
+
 impl<T: ToScillaValue, U: ToScillaValue> ToScillaValue for (T, U) {
-    fn to_value(&self) -> Value {
-        Value::Adt(AdtValue {
+    fn to_value(&self) -> ScillaValue {
+        ScillaValue::Adt(AdtValue {
             constructor: "Pair".to_string(),
             argtypes: vec![T::scilla_type(), U::scilla_type()],
             arguments: vec![self.0.to_value(), self.1.to_value()],
@@ -128,16 +209,39 @@ impl<T: ToScillaValue, U: ToScillaValue> ToScillaValue for (T, U) {
     }
 }
 
+impl<T, U> TryFromScillaValue for (T, U)
+where
+    T: TryFromScillaValue,
+    U: TryFromScillaValue,
+{
+    fn try_from_scilla_value(value: ScillaValue) -> Result<Self, Error> {
+        let error = Error::FailedToParseScillaValue(serde_json::to_string(&value)?, "Pair".to_string());
+        if let ScillaValue::Adt(mut adt) = value {
+            if adt.arguments.len() != 2 {
+                return Err(error);
+            }
+            // Safe to call unwrap because we already checked the size
+            let y = adt.arguments.pop().unwrap().try_into_rust_type()?;
+            let x = adt.arguments.pop().unwrap().try_into_rust_type()?;
+            return Ok((x, y));
+        }
+
+        Err(error)
+    }
+}
+
 impl<K: ToScillaValue, V: ToScillaValue> ToScillaValue for HashMap<K, V> {
-    fn to_value(&self) -> Value {
-        Value::Map(
-            self.iter()
-                .map(|(key, value)| KeyVal {
-                    key: key.to_value(),
-                    val: value.to_value(),
-                })
-                .collect(),
-        )
+    fn to_value(&self) -> ScillaValue {
+        // FIXME:
+        todo!()
+        // ScillaValue::Map(
+        //     self.iter()
+        //         .map(|(key, value)| KeyVal {
+        //             key: key.to_value(),
+        //             val: value.to_value(),
+        //         })
+        //         .collect(),
+        // )
     }
 
     fn scilla_type() -> String {
@@ -145,16 +249,35 @@ impl<K: ToScillaValue, V: ToScillaValue> ToScillaValue for HashMap<K, V> {
     }
 }
 
+impl<K: TryFromScillaValue + std::cmp::Eq + Hash, V: TryFromScillaValue> TryFromScillaValue for HashMap<K, V> {
+    fn try_from_scilla_value(value: ScillaValue) -> Result<Self, Error> {
+        let error = Error::FailedToParseScillaValue(serde_json::to_string(&value)?, "Map".to_string());
+        if let ScillaValue::Map(map) = value {
+            return map
+                .into_iter()
+                .map(|(key, val)| {
+                    Ok((
+                        K::try_from_scilla_value(ScillaValue::Primitive(key))?,
+                        V::try_from_scilla_value(val)?,
+                    ))
+                })
+                .collect::<Result<HashMap<K, V>, Error>>();
+        }
+
+        Err(error)
+    }
+}
+
 impl<T: ToScillaValue> ToScillaValue for [T] {
-    fn to_value(&self) -> Value {
+    fn to_value(&self) -> ScillaValue {
         if self.is_empty() {
-            Value::Adt(AdtValue {
+            ScillaValue::Adt(AdtValue {
                 constructor: "Nil".to_string(),
                 argtypes: vec![T::scilla_type()],
                 arguments: vec![],
             })
         } else {
-            Value::Adt(AdtValue {
+            ScillaValue::Adt(AdtValue {
                 constructor: "Cons".to_string(),
                 argtypes: vec![T::scilla_type()],
                 arguments: vec![self[0].to_value(), self[1..].to_value()],
@@ -168,12 +291,26 @@ impl<T: ToScillaValue> ToScillaValue for [T] {
 }
 
 impl<T: ToScillaValue> ToScillaValue for Vec<T> {
-    fn to_value(&self) -> Value {
+    fn to_value(&self) -> ScillaValue {
         self[..].to_value()
     }
 
     fn scilla_type() -> String {
         <[T]>::scilla_type()
+    }
+}
+
+impl<T: TryFromScillaValue> TryFromScillaValue for Vec<T> {
+    fn try_from_scilla_value(value: ScillaValue) -> Result<Self, Error> {
+        let error = Error::FailedToParseScillaValue(serde_json::to_string(&value)?, "List".to_string());
+        if let ScillaValue::List(list) = value {
+            return list
+                .into_iter()
+                .map(|f| f.try_into_rust_type())
+                .collect::<Result<Vec<T>, Error>>();
+        }
+
+        Err(error)
     }
 }
 

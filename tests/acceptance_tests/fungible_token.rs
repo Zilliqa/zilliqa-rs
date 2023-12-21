@@ -25,22 +25,16 @@ async fn fungible_token_scenario(ctx: &TestContext) -> anyhow::Result<()> {
 
     // Should have 1000 as contract owner's balance
     let balances = contract.balances().await?;
-    assert_eq!(balances[&ctx.wallet.address.to_string().to_lowercase()], "1000");
+    assert_eq!(balances[&ctx.wallet.address], 1000);
 
     // Should be possible to increase allowance by contract owner
     let alice = LocalWallet::create_random()?;
     contract.increase_allowance(alice.address.clone(), 100).call().await?;
-    assert_eq!(
-        contract.allowances().await?[&ctx.wallet.address.to_string().to_lowercase()][&alice.address.to_string().to_lowercase()],
-        "100"
-    );
+    assert_eq!(contract.allowances().await?[&ctx.wallet.address][&alice.address], 100);
 
     // Should be possible to decrease allowance by contract owner
     contract.decrease_allowance(alice.address.clone(), 10).call().await?;
-    assert_eq!(
-        contract.allowances().await?[&ctx.wallet.address.to_string().to_lowercase()][&alice.address.to_string().to_lowercase()],
-        "90"
-    );
+    assert_eq!(contract.allowances().await?[&ctx.wallet.address][&alice.address], 90);
 
     Ok(())
 }
