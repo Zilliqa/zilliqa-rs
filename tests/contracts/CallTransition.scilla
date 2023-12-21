@@ -38,6 +38,9 @@ end
 transition call_bool(v : Bool)
 end
 
+transition call_bnum(v : BNum)
+end
+
 transition call_pair(v : Pair String Uint32)
 end
 

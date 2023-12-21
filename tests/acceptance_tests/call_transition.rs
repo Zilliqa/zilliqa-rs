@@ -19,6 +19,7 @@ async fn set_get_scenario(ctx: &TestContext) -> anyhow::Result<()> {
     contract.call_int_32(5).call().await?;
     contract.call_int_64(5).call().await?;
     contract.call_int_128(6).call().await?;
+    contract.call_bnum(BNum::new("123")).call().await?;
     contract.call_string("hello".to_string()).call().await?;
     contract.call_address(addr.clone()).call().await?;
     contract.call_option_bool(Some(true)).call().await?;

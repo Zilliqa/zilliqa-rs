@@ -9,6 +9,7 @@ impl BNum {
         Self(bnum.to_string())
     }
 }
+
 impl Deref for BNum {
     type Target = String;
 
