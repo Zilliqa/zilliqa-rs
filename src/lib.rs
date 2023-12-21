@@ -1,4 +1,5 @@
 pub mod contract;
+pub mod core;
 pub mod crypto;
 pub mod error;
 pub mod middlewares;

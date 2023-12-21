@@ -1,6 +1,7 @@
 pub mod factory;
 pub mod scilla_value;
 pub mod transition_call;
+use crate::core::BNum;
 use core::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::{ops::Deref, str::FromStr, sync::Arc};

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::Deserialize;
 
-use crate::crypto::ZilAddress;
+use crate::{core::BNum, crypto::ZilAddress};
 
 #[derive(serde::Serialize, Debug, Clone, Deserialize)]
 #[serde(untagged)]
@@ -77,6 +77,7 @@ to_scilla_value_for!(String, "String");
 to_scilla_value_for!(&str, "String");
 to_scilla_value_for!(ZilAddress, "ByStr20");
 to_scilla_value_for!(&ZilAddress, "ByStr20");
+to_scilla_value_for!(BNum, "BNum");
 
 impl<T: ToScillaValue> ToScillaValue for Option<T> {
     fn to_value(&self) -> Value {

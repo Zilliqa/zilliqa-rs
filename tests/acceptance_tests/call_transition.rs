@@ -1,6 +1,6 @@
 use crate::common::TestContext;
 use test_context::test_context;
-use zilliqa_rs::{contract, crypto::ZilAddress};
+use zilliqa_rs::{contract, core::BNum, crypto::ZilAddress};
 
 #[test_context(TestContext)]
 #[tokio::test]
@@ -42,6 +42,12 @@ async fn set_get_scenario(ctx: &TestContext) -> anyhow::Result<()> {
     contract.call_list_4(vec![]).call().await?;
     contract
         .call_list_4(vec![(addr.clone(), vec![(addr.clone(), vec![(23, 32)])])])
+        .call()
+        .await?;
+
+    contract.call_list_5(vec![]).call().await?;
+    contract
+        .call_list_5(vec![(addr.clone(), vec![(BNum::new("234"), 123)])])
         .call()
         .await?;
 

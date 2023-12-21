@@ -47,8 +47,11 @@ end
 transition call_list_2(v: (List (Pair ByStr20 (List (Pair ByStr20 Uint32)))))
 end
 
-transition call_list_3(v : (List (Pair String String)))
+transition call_list_3(v: (List (Pair String String)))
 end
 
 transition call_list_4(v: (List (Pair ByStr20 (List (Pair ByStr20 (List (Pair Uint32 Uint128)))))))
+end
+
+transition call_list_5(v: (List (Pair ByStr20 (List (Pair BNum Uint128)))))
 end

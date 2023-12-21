@@ -50,7 +50,7 @@ fn scilla_type_to_rust(scilla_type: &scilla_parser::Type) -> String {
         scilla_parser::Type::Uint128 => "u128".to_string(),
         scilla_parser::Type::Uint256 => "primitive_types::U256".to_string(),
         scilla_parser::Type::String => "String".to_string(),
-        scilla_parser::Type::BNum => "primitive_types::U256".to_string(),
+        scilla_parser::Type::BNum => "BNum".to_string(),
         scilla_parser::Type::Map(key, value) => format!("HashMap<{}, {}>", scilla_type_to_rust(key), scilla_type_to_rust(value)),
         scilla_parser::Type::ByStr(x) if *x == 20 => "ZilAddress".to_string(),
         scilla_parser::Type::ByStr(_) => "String".to_string(),
