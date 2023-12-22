@@ -2,6 +2,15 @@ use std::fmt::Display;
 
 use serde::{Serialize, Serializer};
 
+/// The `Version` struct represents a version with a message version and a chain ID.
+///
+/// Properties:
+///
+/// * `msg_version`: The `msg_version` property represents the version of the message being sent or
+/// received.
+/// * `chain_id`: The `chain_id` property represents the identifier of a blockchain network. It is
+/// typically used to differentiate between different blockchain networks, such as the mainnet, testnet,
+/// or any other custom networks.
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct Version {
     msg_version: u16,
@@ -16,6 +25,8 @@ impl Version {
         }
     }
 
+    /// The `pack` function takes the `chain_id` and `msg_version` values and packs them into a
+    /// single `u32` value.
     pub fn pack(&self) -> u32 {
         (self.chain_id as u32) << 16 | (self.msg_version as u32)
     }

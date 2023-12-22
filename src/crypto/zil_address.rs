@@ -25,6 +25,7 @@ impl Deref for ZilAddress {
 impl TryFrom<&PublicKey> for ZilAddress {
     type Error = Error;
 
+    /// Convert a public key into a ZilAddress
     fn try_from(value: &PublicKey) -> Result<Self, Self::Error> {
         let mut hasher = sha2::Sha256::new();
         hasher.update(value.to_sec1_bytes());
@@ -47,6 +48,7 @@ impl ZilAddress {
         Ok(bech32::encode("zil", hex::decode(address)?.to_base32(), Variant::Bech32)?)
     }
 
+    /// Create an empty ZilAddress, mainly to deploy a new contract.
     pub fn nil() -> Self {
         Self("0x0000000000000000000000000000000000000000".to_string())
     }
@@ -55,6 +57,7 @@ impl ZilAddress {
 impl FromStr for ZilAddress {
     type Err = Error;
 
+    /// Parse a string slice into a ZilAddress.
     fn from_str(addr: &str) -> Result<Self, Self::Err> {
         if is_address(addr) {
             Ok(Self(to_checksum_address(addr)?))

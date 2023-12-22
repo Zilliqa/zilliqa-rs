@@ -36,10 +36,21 @@ impl<'a, T: JsonRpcClient> Transaction<'a, T> {
         }
     }
 
+    /// Tries to confirm a transaction.
     pub async fn confirm(&self) -> Result<GetTransactionResponse, Error> {
         self.try_confirm(tokio::time::Duration::from_secs(10), 33).await
     }
 
+    /// The `try_confirm` function attempts to confirm a transaction by making repeated requests to a
+    /// client, with a specified interval and maximum number of attempts, and returns the result.
+    ///
+    /// Arguments:
+    ///
+    /// * `interval`: The `interval` parameter is the duration of time to wait between each attempt to
+    /// confirm the transaction. It is of type `tokio::time::Duration`, which represents a duration of time
+    /// in the Tokio runtime.
+    /// * `max_attempt`: The `max_attempt` parameter is the maximum number of attempts to confirm the
+    /// transaction.
     pub async fn try_confirm(&self, interval: tokio::time::Duration, max_attempt: u32) -> Result<GetTransactionResponse, Error> {
         self.status.set(TxStatus::Pending);
         for _ in 0..max_attempt {

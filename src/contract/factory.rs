@@ -19,6 +19,24 @@ impl<T: Middleware> Factory<T> {
         Self { client }
     }
 
+    /// The `deploy_from_file` function deploys a contract from a file path, with the option to override
+    /// transaction parameters.
+    ///
+    /// Arguments:
+    ///
+    /// * `path`: The `path` parameter is a reference to a `Path` object, which represents the path to a
+    /// file. It is used to specify the location of the file from which the contract code will be read.
+    /// * `init`: The `init` parameter is of type `Init`. It represents the initialization parameters for
+    /// the contract being deployed. The specific structure and fields of the `Init` type would depend on
+    /// the contract being deployed.
+    /// * `overridden_params`: `overridden_params` is an optional parameter of type `TransactionParams`. It
+    /// allows you to override the default transaction parameters when deploying the contract. If you don't
+    /// want to override any parameters, you can pass `None` as the value for this parameter.
+    ///
+    /// Returns:
+    ///
+    /// a Result object with a value of type BaseContract<T> if the operation is successful, or an Error
+    /// object if there is an error.
     pub async fn deploy_from_file(
         &self,
         path: &Path,
@@ -29,6 +47,21 @@ impl<T: Middleware> Factory<T> {
         self.deploy_str(contract_code, init, overridden_params).await
     }
 
+    /// The `deploy_str` function deploys a contract with the given code and initialization parameters, and
+    /// returns a `BaseContract` object.
+    ///
+    /// Arguments:
+    ///
+    /// * `contract_code`: A string containing the code of the contract to be deployed.
+    /// * `init`: The `init` parameter is of type `Init`, which is a custom struct or enum that contains the
+    /// initialization data for the contract.
+    /// * `overridden_params`: `overridden_params` is an optional parameter of type
+    /// `Option<TransactionParams>`. It allows the caller to provide custom transaction parameters for
+    /// deploying the contract.
+    ///
+    /// Returns:
+    ///
+    /// The function `deploy_str` returns a `Result` containing either a `BaseContract<T>` or an `Error`.
     pub async fn deploy_str(
         &self,
         contract_code: String,

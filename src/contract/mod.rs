@@ -54,6 +54,15 @@ impl<T: Middleware> BaseContract<T> {
         }
     }
 
+    /// Call a transition of the contract.
+    ///
+    /// Arguments:
+    ///
+    /// * `transition`: A string representing the name of the transition to be called.
+    /// * `args`: A vector of ScillaVariable objects, which represents the arguments to be passed to the
+    /// transition being called.
+    /// * `overridden_params`: An optional parameter that allows you to override the default transaction
+    /// parameters. If not provided, it will use the default transaction parameters.
     pub async fn call(
         &self,
         transition: &str,
@@ -67,6 +76,13 @@ impl<T: Middleware> BaseContract<T> {
             .await
     }
 
+    /// The function `get_field` retrieves a specific field from a smart contract state and parses it into a
+    /// specified type.
+    ///
+    /// Arguments:
+    ///
+    /// * `field_name`: The `field_name` parameter is a string that represents the name of the field you
+    /// want to retrieve from the smart contract state.
     pub async fn get_field<F: FromStr>(&self, field_name: &str) -> Result<F, Error> {
         let state = self.client.get_smart_contract_state(&self.address).await?;
         if let JsonValue::Object(object) = state {
@@ -80,10 +96,12 @@ impl<T: Middleware> BaseContract<T> {
         Err(Error::NoSuchFieldInContractState(field_name.to_string()))
     }
 
+    /// The function `get_init` retrieves the initialization parameters of a smart contract.
     pub async fn get_init(&self) -> Result<Vec<EventParam>, Error> {
         self.client.get_smart_contract_init(&self.address).await
     }
 
+    /// The function `get_state` retrieves the state of a smart contract asynchronously.
     pub async fn get_state<S: Send + DeserializeOwned>(&self) -> Result<S, Error> {
         self.client.get_smart_contract_state(&self.address).await
     }

@@ -23,14 +23,17 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
         self.inner().provider()
     }
 
+    /// The function `is_signer` returns a boolean value indicating whether the inner object is a signer.
     fn is_signer(&self) -> bool {
         self.inner().is_signer()
     }
 
+    /// The `chainid` function returns the chain ID.
     fn chainid(&self) -> u16 {
         self.inner().chainid()
     }
 
+    /// The `deploy_contract` function deploys a contract by sending a transaction without confirmation and
     async fn deploy_contract(&self, tx: CreateTransactionRequest) -> Result<DeployContractResponse, Error> {
         self.send_transaction_without_confirm::<DeployContractResponse>(tx).await
     }
@@ -63,6 +66,11 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
         self.inner().create_transaction(tx).await
     }
 
+    /// The function `get_transaction_status` retrieves the status of a transaction identified by its hash.
+    ///
+    /// Arguments:
+    ///
+    /// * `tx_hash`: A string representing the transaction hash.
     async fn get_transaction_status(&self, tx_hash: &str) -> Result<TransactionStatus, Error> {
         if !is_tx_hash(tx_hash) {
             return Err(Error::InvalidTransactionHash(tx_hash.to_string()));
@@ -71,6 +79,11 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
         self.inner().get_transaction_status(tx_hash).await
     }
 
+    /// The function `get_transaction` retrieves a transaction using its hash.
+    ///
+    /// Arguments:
+    ///
+    /// * `tx_hash`: A string representing the transaction hash.
     async fn get_transaction(&self, tx_hash: &str) -> Result<GetTransactionResponse, Error> {
         if !is_tx_hash(tx_hash) {
             return Err(Error::InvalidTransactionHash(tx_hash.to_string()));

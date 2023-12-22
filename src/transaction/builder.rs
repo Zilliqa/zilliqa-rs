@@ -16,6 +16,8 @@ pub struct TransactionParams {
     pub signature: Option<String>,
 }
 
+/// The TransactionBuilder struct is used to construct transactions with
+/// specified parameters.
 #[derive(Default, Debug)]
 pub struct TransactionBuilder {
     inner_transaction: TransactionParams,

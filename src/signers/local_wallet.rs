@@ -9,6 +9,17 @@ use crate::{
 
 use super::Signer;
 
+/// Represents a local wallet, containing a private key, address, and public key.
+///
+/// Properties:
+///
+/// * `private_key`: The `private_key` property is of type `PrivateKey` and represents the private key
+/// of the wallet. It is used for signing transactions and proving ownership of the wallet.
+/// * `address`: The `address` property is of type `ZilAddress` and represents the address of the
+/// wallet. It is a public identifier that is used to receive funds or interact with the Zilliqa
+/// blockchain.
+/// * `public_key`: The `public_key` property is a public key associated with the `LocalWallet`. It is
+/// used for cryptographic operations and can be shared with others.
 #[derive(Debug, Clone, PartialEq)]
 pub struct LocalWallet {
     pub private_key: PrivateKey,
@@ -17,6 +28,13 @@ pub struct LocalWallet {
 }
 
 impl LocalWallet {
+    /// The function takes a private key as input, parses it into a `PrivateKey` object, converts it into a
+    /// `ZilAddress`, and returns a new instance of the struct containing the address, public key, and
+    /// private key.
+    ///
+    /// Arguments:
+    ///
+    /// * `private_key`: A string representing the private key.
     pub fn new(private_key: &str) -> Result<Self, Error> {
         let private_key = private_key.parse::<PrivateKey>()?;
         let address = ZilAddress::try_from(&private_key.public_key())?;
@@ -28,6 +46,8 @@ impl LocalWallet {
         })
     }
 
+    /// The function `create_random` generates a random private key and creates a new instance of a struct
+    /// using that key.
     pub fn create_random() -> Result<Self, Error> {
         let private_key = generate_private_key();
         Self::new(&private_key)
@@ -51,6 +71,10 @@ impl Signer for LocalWallet {
 impl FromStr for LocalWallet {
     type Err = Error;
 
+    /// This function create a new LocalWallet out of a string slice.
+    /// Arguments:
+    ///
+    /// * `private_key`: A string representing the private key.
     fn from_str(private_key: &str) -> Result<Self, Self::Err> {
         Self::new(private_key)
     }

@@ -47,11 +47,23 @@ where
     Ok(format!("{integer}.{decimals:0>units$}"))
 }
 
+/// The function `format_zil` formats a given amount of zil into a string
+/// representation.
+///
+/// Arguments:
+///
+/// * `amount`: The `amount` is used to specify the amount in QA unit to be formatted.
+///
+/// Returns:
+///
+/// The `format_zil` function returns a `String` that represents the formatted amount of ZIL.
 pub fn format_zil(amount: u128) -> String {
     // Safe to call unwrap, "zil" can be converted to unit
     format_units(amount, "zil").unwrap()
 }
 
+/// The `parse_zil` function is a convenience function that parses a string representation of an amount
+/// in ZIL into a QA.
 pub fn parse_zil<S: ToString>(zil: S) -> Result<u128, Error> {
     parse_units(zil, "zil")
 }
