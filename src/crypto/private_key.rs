@@ -18,6 +18,7 @@ impl PrivateKey {
 impl FromStr for PrivateKey {
     type Err = Error;
 
+    /// Create a private key out of a sting slice.
     fn from_str(secret_key: &str) -> Result<Self, Self::Err> {
         let secret_key = match secret_key.strip_prefix("0x") {
             Some(secret_key) => secret_key,

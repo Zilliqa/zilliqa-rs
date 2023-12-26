@@ -14,6 +14,7 @@ impl PublicKey {
 impl FromStr for PublicKey {
     type Err = Error;
 
+    /// Parse a string into a public key
     fn from_str(public_key: &str) -> Result<Self, Self::Err> {
         let public_key = match public_key.strip_prefix("0x") {
             Some(public_key) => public_key,
