@@ -11,6 +11,7 @@ pub mod util;
 
 pub use error::Error;
 
+/// Run them with `cargo test --doc`
 #[doc = include_str!("../README.md")]
 #[cfg(doctest)]
 pub struct ReadmeDoctests;

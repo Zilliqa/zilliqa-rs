@@ -44,7 +44,7 @@ use zilliqa_rs::middlewares::Middleware;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let provider = Provider::<Http>::try_from("http://127.0.0.1:5555")?.with_chain_id(1);
+    let provider = Provider::<Http>::try_from("http://127.0.0.1:5555")?.with_chain_id(222);
     let balance = provider.get_balance("0x381f4008505e940ad7681ec3468a719060caf796").await;
     Ok(())
 }
@@ -54,7 +54,7 @@ async fn main() -> anyhow::Result<()> {
 The nonce can be omitted. Then the current nonce is fetched, incremented, and used as the next nonce.
 
 ```rust
-use zilliqa_rs::providers::{Http, Provider};
+use zilliqa_rs::providers::{CreateTransactionResponse, Http, Provider};
 use zilliqa_rs::transaction::TransactionBuilder;
 use zilliqa_rs::signers::LocalWallet;
 use zilliqa_rs::middlewares::Middleware;
@@ -66,7 +66,7 @@ async fn main() -> anyhow::Result<()> {
     let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
 
     let provider = Provider::<Http>::try_from(END_POINT)?
-        .with_chain_id(1)
+        .with_chain_id(222)
         .with_signer(wallet.clone());
 
     let receiver = LocalWallet::create_random()?;
@@ -77,7 +77,7 @@ async fn main() -> anyhow::Result<()> {
         .gas_limit(50u64)
         .build();
 
-    provider.send_transaction_without_confirm(tx).await?;
+    provider.send_transaction_without_confirm::<CreateTransactionResponse>(tx).await?;
     Ok(())
 }
 ```
@@ -86,7 +86,7 @@ async fn main() -> anyhow::Result<()> {
 TransactionBuilder has an auxiliary function named `pay` to simplify payment transaction creation:
 
 ```rust
-use zilliqa_rs::providers::{Http, Provider};
+use zilliqa_rs::providers::{CreateTransactionResponse, Http, Provider};
 use zilliqa_rs::transaction::TransactionBuilder;
 use zilliqa_rs::signers::LocalWallet;
 use zilliqa_rs::middlewares::Middleware;
@@ -98,14 +98,14 @@ async fn main() -> anyhow::Result<()> {
 
     let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
     let provider = Provider::<Http>::try_from(END_POINT)?
-        .with_chain_id(1)
+        .with_chain_id(222)
         .with_signer(wallet.clone());
 
     let receiver = LocalWallet::create_random()?;
     let amount = parse_zil("0.2")?;
 
     let tx = TransactionBuilder::default().pay(amount, receiver.address.clone()).build();
-    provider.send_transaction_without_confirm(tx).await?;
+    provider.send_transaction_without_confirm::<CreateTransactionResponse>(tx).await?;
 
     Ok(())
 }
@@ -146,7 +146,7 @@ async fn main() -> anyhow::Result<()> {
     let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
 
     let provider = Provider::<Http>::try_from(END_POINT)?
-        .with_chain_id(1)
+        .with_chain_id(222)
         .with_signer(wallet.clone());
 
     let contract = contract::Timestamp::deploy(Arc::new(provider)).await?;
@@ -162,12 +162,13 @@ Instead of using rust binding, it's possible to use `deploy_from_file` or `deplo
 
 ### Calling a transition
 
-The Timestamp contract has an `EventTimestamp` transition. It can be called in rust like:
+The [HelloWorld](./tests/contracts/HelloWorld.scilla) contract has a `setHello` transition. It can be called in rust like:
 ```rust
 use std::sync::Arc;
 
 use zilliqa_rs::{
     contract,
+    core::BNum,
     providers::{Http, Provider},
     signers::LocalWallet,
 };
@@ -179,12 +180,11 @@ async fn main() -> anyhow::Result<()> {
     let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
 
     let provider = Provider::<Http>::try_from(END_POINT)?
-        .with_chain_id(1)
+        .with_chain_id(222)
         .with_signer(wallet.clone());
 
-    let a_big_number = primitive_types::U256::from_dec_str("123")?;
-    let contract = contract::Timestamp::deploy(Arc::new(provider)).await?;
-    contract.event_timestamp(a_big_number).call().await;
+    let contract = contract::HelloWorld::deploy(Arc::new(provider), wallet.address.clone()).await?;
+    contract.set_hello("Salaam".to_string()).call().await?;
 
     Ok(())
 }
@@ -194,16 +194,17 @@ If a transition needs some parameters, like here, You must pass them too, otherw
 ### Calling a transaction with custom parameters for nonce, amount, etc.
 It's possible to override default transaction parameters such as nonce and amount.
 ```rust
-use zilliqa_rs::{contract, middlewares::Middleware, util::parse_zil};
+use zilliqa_rs::{contract, middlewares::Middleware, util::parse_zil, signers::LocalWallet, providers::{Http, Provider}};
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     const END_POINT: &str = "http://localhost:5555";
 
-    let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
+    let wallet = "e53d1c3edaffc7a7bab5418eb836cf75819a82872b4a1a0f1c7fcf5c3e020b89".parse::<LocalWallet>()?;
 
     let provider = Arc::new(Provider::<Http>::try_from(END_POINT)?
-        .with_chain_id(1)
+        .with_chain_id(222)
         .with_signer(wallet.clone()));
 
     let contract = contract::SendZil::deploy(provider.clone()).await?;
@@ -224,14 +225,7 @@ contract HelloWorld
 
 field welcome_msg : String = "Hello world!"
 ```
-A struct named `HelloWorldState` is created under the hood for this contract like:
-```rust
-#[derive(serde::Deserialize, Debug)]
-pub struct HelloWorldState {
-    pub welcome_msg: String,
-}
-```
-And you can get the latest state of the contract with `get_state` function:
+You can get the latest state of the contract by calling `welcome_msg` function:
 ```rust
 use std::sync::Arc;
 
@@ -247,16 +241,17 @@ async fn main() -> anyhow::Result<()> {
     let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
 
     let provider = Provider::<Http>::try_from(END_POINT)?
-        .with_chain_id(1)
+        .with_chain_id(222)
         .with_signer(wallet.clone());
 
-    let contract = contract::HelloWorld::deploy(Arc::new(provider), "Helloooo".to_string()).await?;
+    let contract = contract::HelloWorld::deploy(Arc::new(provider), wallet.address.clone()).await?;
 
-    let state = contract.get_state().await?;
     let hello = contract.welcome_msg().await?;
-    assert_eq!(hello, "helloooo".to_string());
-    assert_eq!(hello, state.welcome_msg);
+    assert_eq!(hello, "Hello world!".to_string());
 
+    contract.set_hello("Salaam".to_string()).call().await?;
+    let hello = contract.welcome_msg().await?;
+    assert_eq!(hello, "Salaam".to_string());
     Ok(())
 }
 ```
