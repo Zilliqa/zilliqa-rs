@@ -232,7 +232,7 @@ fn generate(contracts_path: PathBuf) -> Result<()> {
         let entry = entry.context("Failed to get contract entry")?;
         let path = entry.path();
         if path.is_file() {
-            match Contract::from_path(&path) {
+            match Contract::parse(&path) {
                 Ok(contract) => match generate_rust_binding(&contract, &path) {
                     Ok(code) => writeln!(file, "{code}").unwrap(),
                     Err(e) => {
