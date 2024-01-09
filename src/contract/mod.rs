@@ -1,7 +1,6 @@
 pub mod factory;
 pub mod scilla_value;
 pub mod transition_call;
-use crate::core::BNum;
 use core::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::{ops::Deref, str::FromStr, sync::Arc};
@@ -12,11 +11,9 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 pub use transition_call::*;
 
-use crate::providers::EventParam;
+use crate::core::{BNum, EventParam, GetTransactionResponse};
 use crate::signers::Signer;
-use crate::{
-    crypto::ZilAddress, middlewares::Middleware, providers::GetTransactionResponse, transaction::TransactionParams, Error,
-};
+use crate::{crypto::ZilAddress, middlewares::Middleware, transaction::TransactionParams, Error};
 
 #[derive(Debug)]
 pub struct BaseContract<T: Middleware> {

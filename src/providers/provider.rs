@@ -1,7 +1,6 @@
-use super::{
+use crate::core::{
     net::RPCMethod::{self, *},
-    CreateTransactionRequest, EventParam, SmartContractCode, SmartContracts, TransactionStatus, TransactionsForTxBlockEx,
-    TxnBodiesForTxBlockEx,
+    types::*,
 };
 use async_trait::async_trait;
 use jsonrpsee::{core::params::ArrayParams, rpc_params};
@@ -15,10 +14,7 @@ use crate::{
     Error,
 };
 
-use super::{
-    BalanceResponse, BlockList, BlockchainInfo, DsBlock, GetTransactionResponse, Http, JsonRpcClient, MinerInfo,
-    ShardingStructure, TxBlock, TxList,
-};
+use super::{Http, JsonRpcClient};
 
 #[derive(Clone, Debug)]
 pub struct Provider<P> {

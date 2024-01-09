@@ -7,8 +7,9 @@ pub use builder::*;
 pub use version::*;
 
 use crate::{
+    core::GetTransactionResponse,
     middlewares::Middleware,
-    providers::{GetTransactionResponse, JsonRpcClient, Provider},
+    providers::{JsonRpcClient, Provider},
     Error,
 };
 

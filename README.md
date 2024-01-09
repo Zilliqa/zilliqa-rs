@@ -54,7 +54,8 @@ async fn main() -> anyhow::Result<()> {
 The nonce can be omitted. Then the current nonce is fetched, incremented, and used as the next nonce.
 
 ```rust
-use zilliqa_rs::providers::{CreateTransactionResponse, Http, Provider};
+use zilliqa_rs::providers::{Http, Provider};
+use zilliqa_rs::core::CreateTransactionResponse;
 use zilliqa_rs::transaction::TransactionBuilder;
 use zilliqa_rs::signers::LocalWallet;
 use zilliqa_rs::middlewares::Middleware;
@@ -86,7 +87,8 @@ async fn main() -> anyhow::Result<()> {
 TransactionBuilder has an auxiliary function named `pay` to simplify payment transaction creation:
 
 ```rust
-use zilliqa_rs::providers::{CreateTransactionResponse, Http, Provider};
+use zilliqa_rs::providers::{Http, Provider};
+use zilliqa_rs::core::CreateTransactionResponse;
 use zilliqa_rs::transaction::TransactionBuilder;
 use zilliqa_rs::signers::LocalWallet;
 use zilliqa_rs::middlewares::Middleware;

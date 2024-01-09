@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use async_trait::async_trait;
 use serde::de::DeserializeOwned;
 
-use crate::{providers::CreateTransactionRequest, signers::Signer, transaction::Version, Error};
+use crate::{core::CreateTransactionRequest, signers::Signer, transaction::Version, Error};
 
 use super::Middleware;
 
