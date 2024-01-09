@@ -2,6 +2,11 @@
 name = "zilliqa-rs"
 version = "0.1.0"
 edition = "2021"
+description = "A Rust SDK for Zilliqa blockchain"
+license = "MIT"
+authors = ["Saeed Dadkhah <saeed@zilliqa.com>"]
+repository = "https://github.com/zilliqa/zilliqa-rs/"
+documentation = "https://docs.rs/zilliqa-rs"
 
 [lib]
 path = "src/lib.rs"
