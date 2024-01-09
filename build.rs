@@ -257,7 +257,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         .map(PathBuf::from)
         .unwrap_or(PathBuf::from("contracts"));
 
-    add_to_log(&format!("Contract path: {}", contracts_path.display()));
+    add_to_log(&format!(
+        "Contract path: {}",
+        contracts_path.canonicalize().unwrap().display()
+    ));
     if let Err(x) = generate(contracts_path) {
         add_to_log(&x.to_string())
     }
