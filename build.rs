@@ -50,7 +50,7 @@ fn transition_to_rust_function(transition: &Transition) -> String {
     let transition_name_snake = transition.name.to_case(convert_case::Case::Snake);
     format!(
         r#"
-    pub fn {transition_name_snake}(&self {}) -> RefMut<'_, transition_call::TransitionCall<T>> {{
+    pub fn {transition_name_snake}(&self {}) -> core::cell::RefMut<'_, transition_call::TransitionCall<T>> {{
         self.{transition_name_snake}.borrow_mut().args(vec![{}]);
         self.{transition_name_snake}.borrow_mut()
     }}
@@ -103,7 +103,12 @@ fn field_to_function_param(field: &Field) -> String {
 fn transitions_as_struct_fields(transitions: &Vec<Transition>) -> String {
     transitions
         .iter()
-        .map(|tr| format!("{}: RefCell<TransitionCall<T>>,", tr.name.to_case(convert_case::Case::Snake)))
+        .map(|tr| {
+            format!(
+                "{}: core::cell::RefCell<TransitionCall<T>>,",
+                tr.name.to_case(convert_case::Case::Snake)
+            )
+        })
         .reduce(|acc, e| format!("{acc}\n    {e}"))
         .unwrap_or_default()
 }
@@ -140,7 +145,7 @@ fn transitions_to_transition_call_object(transitions: &Vec<Transition>) -> Strin
         .iter()
         .map(|tr| {
             format!(
-                "{}: RefCell::new(TransitionCall::new(\"{}\", &base.address, base.client.clone())),",
+                "{}: core::cell::RefCell::new(TransitionCall::new(\"{}\", &base.address, base.client.clone())),",
                 tr.name.to_case(convert_case::Case::Snake),
                 tr.name
             )

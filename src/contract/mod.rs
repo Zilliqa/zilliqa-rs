@@ -170,7 +170,6 @@
 pub mod factory;
 pub mod scilla_value;
 pub mod transition_call;
-use core::cell::{RefCell, RefMut};
 use std::{ops::Deref, str::FromStr, sync::Arc};
 
 pub use factory::Factory as ContractFactory;
