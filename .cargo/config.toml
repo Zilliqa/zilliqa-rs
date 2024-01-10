@@ -1,2 +1,0 @@
-[env]
-CONTRACTS_PATH = {value = "tests/contracts"}
