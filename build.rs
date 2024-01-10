@@ -22,8 +22,12 @@ fn scilla_type_to_rust(scilla_type: &scilla_parser::Type) -> String {
         scilla_parser::Type::Uint128 => "u128".to_string(),
         scilla_parser::Type::Uint256 => "primitive_types::U256".to_string(),
         scilla_parser::Type::String => "String".to_string(),
-        scilla_parser::Type::BNum => "BNum".to_string(),
-        scilla_parser::Type::Map(key, value) => format!("HashMap<{}, {}>", scilla_type_to_rust(key), scilla_type_to_rust(value)),
+        scilla_parser::Type::BNum => "crate::core::BNum".to_string(),
+        scilla_parser::Type::Map(key, value) => format!(
+            "std::collections::HashMap<{}, {}>",
+            scilla_type_to_rust(key),
+            scilla_type_to_rust(value)
+        ),
         scilla_parser::Type::ByStr(x) if *x == 20 => "ZilAddress".to_string(),
         scilla_parser::Type::ByStr(_) => "String".to_string(),
         scilla_parser::Type::Other(_) => {
@@ -223,7 +227,7 @@ fn add_to_log(log: &str) {
     writeln!(file, "{}", log).unwrap();
 }
 
-fn generate(contracts_path: PathBuf) -> Result<()> {
+fn generate(contracts_path: &Path) -> Result<()> {
     let out_dir = env::var_os("OUT_DIR").context("Failed to get OUT_DIR")?;
     let dest_path = Path::new(&out_dir).join("scilla_contracts.rs");
 
@@ -251,20 +255,36 @@ fn generate(contracts_path: PathBuf) -> Result<()> {
     Ok(())
 }
 
+fn generate_empty() -> Result<()> {
+    let out_dir = env::var_os("OUT_DIR").context("Failed to get OUT_DIR")?;
+    let dest_path = Path::new(&out_dir).join("scilla_contracts.rs");
+    std::fs::write(dest_path, "// CONTRACTS_PATH is not set, or does not exist")
+        .context("Failed to create empty scilla_contracts.rs file")
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     add_to_log("Start...");
-    let contracts_path = env::var("CONTRACTS_PATH")
-        .map(PathBuf::from)
-        .unwrap_or(PathBuf::from("contracts"));
+    let contracts_path = env::var("CONTRACTS_PATH").unwrap_or_default();
+    if contracts_path.is_empty() {
+        add_to_log("CONTRACTS_PATH is not set. Exiting...");
+        generate_empty()?;
+        return Ok(());
+    }
 
-    add_to_log(&format!(
-        "Contract path: {}",
-        contracts_path.canonicalize().unwrap().display()
-    ));
-    if let Err(x) = generate(contracts_path) {
+    add_to_log(&format!("Contract path: {}", contracts_path));
+    let contracts_path = PathBuf::from(contracts_path);
+    if !contracts_path.exists() {
+        add_to_log(&format!("{} does not exist. Exiting...", contracts_path.display()));
+        generate_empty()?;
+        return Ok(());
+    }
+
+    if let Err(x) = generate(&contracts_path) {
         add_to_log(&x.to_string())
     }
+
     println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed=contracts");
+    println!("cargo:rerun-if-env-changed=CONTRACTS_PATH");
+    println!("cargo:rerun-if-changed={}", contracts_path.display());
     Ok(())
 }

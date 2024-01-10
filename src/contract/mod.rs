@@ -2,7 +2,6 @@ pub mod factory;
 pub mod scilla_value;
 pub mod transition_call;
 use core::cell::{RefCell, RefMut};
-use std::collections::HashMap;
 use std::{ops::Deref, str::FromStr, sync::Arc};
 
 pub use factory::Factory as ContractFactory;
@@ -11,7 +10,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 pub use transition_call::*;
 
-use crate::core::{BNum, EventParam, GetTransactionResponse};
+use crate::core::{EventParam, GetTransactionResponse};
 use crate::signers::Signer;
 use crate::{crypto::ZilAddress, middlewares::Middleware, transaction::TransactionParams, Error};
 
