@@ -35,8 +35,34 @@ impl<T: Middleware> Factory<T> {
     ///
     /// Returns:
     ///
-    /// a Result object with a value of type BaseContract<T> if the operation is successful, or an Error
+    /// a Result object with a value of type `BaseContract<T>` if the operation is successful, or an Error
     /// object if there is an error.
+    /// # Example
+    /// ```
+    /// use zilliqa_rs::providers::{Http, Provider};
+    /// use zilliqa_rs::contract::ScillaVariable;
+    /// use zilliqa_rs::signers::LocalWallet;
+    /// use zilliqa_rs::contract::Init;
+    /// use zilliqa_rs::contract::ContractFactory;
+    /// use std::path::PathBuf;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> anyhow::Result<()> {
+    ///     const END_POINT: &str = "http://localhost:5555";
+    ///
+    ///     let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
+    ///
+    ///     let provider = Provider::<Http>::try_from(END_POINT)?
+    ///         .with_chain_id(222)
+    ///         .with_signer(wallet.clone());
+    ///
+    ///     let factory = ContractFactory::new(provider.into());
+    ///     let init = Init(vec![ScillaVariable::new_from_str("_scilla_version", "Uint32", "0")]);
+    ///     let contract = factory.deploy_from_file(&PathBuf::from("./tests/contracts/Timestamp.scilla"), init, None).await?;
+    ///     println!("addr: {:?}", contract);
+    ///     Ok(())
+    /// }
+    /// ```
     pub async fn deploy_from_file(
         &self,
         path: &Path,
@@ -62,6 +88,32 @@ impl<T: Middleware> Factory<T> {
     /// Returns:
     ///
     /// The function `deploy_str` returns a `Result` containing either a `BaseContract<T>` or an `Error`.
+    /// # Example
+    /// ```
+    /// use zilliqa_rs::providers::{Http, Provider};
+    /// use zilliqa_rs::contract::ScillaVariable;
+    /// use zilliqa_rs::signers::LocalWallet;
+    /// use zilliqa_rs::contract::Init;
+    /// use zilliqa_rs::contract::ContractFactory;
+    /// use std::path::PathBuf;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> anyhow::Result<()> {
+    ///     const END_POINT: &str = "http://localhost:5555";
+    ///
+    ///     let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
+    ///
+    ///     let provider = Provider::<Http>::try_from(END_POINT)?
+    ///         .with_chain_id(222)
+    ///         .with_signer(wallet.clone());
+    ///
+    ///     let factory = ContractFactory::new(provider.into());
+    ///     let init = Init(vec![ScillaVariable::new_from_str("_scilla_version", "Uint32", "0")]);
+    ///     let contract = factory.deploy_str(include_str!("../../tests/contracts/Timestamp.scilla").to_string(), init, None).await?;
+    ///     println!("addr: {:?}", contract);
+    ///     Ok(())
+    /// }
+    /// ```
     pub async fn deploy_str(
         &self,
         contract_code: String,

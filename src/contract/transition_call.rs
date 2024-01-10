@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use crate::{
+    core::GetTransactionResponse,
     crypto::ZilAddress,
     middlewares::Middleware,
-    providers::GetTransactionResponse,
     transaction::{TransactionBuilder, TransactionParams},
     util::parse_zil,
     Error,

@@ -1,12 +1,9 @@
 pub mod http;
 mod macros;
-pub mod net;
 pub mod provider;
-pub mod types;
 
 pub use http::Http;
 pub use provider::Provider;
-pub use types::*;
 
 use crate::Error;
 use async_trait::async_trait;

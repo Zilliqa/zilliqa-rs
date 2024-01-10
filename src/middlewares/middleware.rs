@@ -1,6 +1,7 @@
 use crate::{
+    core::types::*,
     crypto::{Signature, ZilAddress},
-    providers::{types::*, JsonRpcClient, Provider},
+    providers::{JsonRpcClient, Provider},
     transaction::Transaction,
     util::validation::is_tx_hash,
     Error,

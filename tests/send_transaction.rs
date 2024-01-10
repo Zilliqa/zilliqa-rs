@@ -5,8 +5,9 @@ use claim::assert_gt;
 use common::TestContext;
 use test_context::test_context;
 use zilliqa_rs::{
+    core::CreateTransactionResponse,
     middlewares::Middleware,
-    providers::{CreateTransactionResponse, Http, Provider},
+    providers::{Http, Provider},
     signers::LocalWallet,
     transaction::{TransactionBuilder, Version},
     util::parse_zil,

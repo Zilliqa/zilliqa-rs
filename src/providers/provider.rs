@@ -1,7 +1,6 @@
-use super::{
+use crate::core::{
     net::RPCMethod::{self, *},
-    CreateTransactionRequest, EventParam, SmartContractCode, SmartContracts, TransactionStatus, TransactionsForTxBlockEx,
-    TxnBodiesForTxBlockEx,
+    types::*,
 };
 use async_trait::async_trait;
 use jsonrpsee::{core::params::ArrayParams, rpc_params};
@@ -15,11 +14,55 @@ use crate::{
     Error,
 };
 
-use super::{
-    BalanceResponse, BlockList, BlockchainInfo, DsBlock, GetTransactionResponse, Http, JsonRpcClient, MinerInfo,
-    ShardingStructure, TxBlock, TxList,
-};
+use super::{Http, JsonRpcClient};
 
+/// # Example
+/// ## From a URL
+/// ```
+/// use zilliqa_rs::providers::{Http, Provider};
+/// #[tokio::main]
+/// async fn main() -> anyhow::Result<()> {
+///     let provider = Provider::<Http>::try_from("http://127.0.0.1:5555")?;
+///     Ok(())
+/// }
+/// ```
+///
+/// ## With chain ID
+/// ```
+/// use zilliqa_rs::providers::{Http, Provider};
+///
+/// #[tokio::main]
+/// async fn main() -> anyhow::Result<()> {
+///     let provider = Provider::<Http>::try_from("http://127.0.0.1:5555").unwrap().with_chain_id(1);
+///     Ok(())
+/// }
+/// ```
+/// ## With a signer
+/// If a provider has a designated signer, all transactions requiring signing will be signed using the designated signer before being sent to the endpoint.
+///
+/// ```
+/// use zilliqa_rs::providers::{Http, Provider};
+/// use zilliqa_rs::signers::LocalWallet;
+///
+/// #[tokio::main]
+/// async fn main() -> anyhow::Result<()> {
+///     let wallet = "dcf2cbdd171a21c480aa7f53d77f31bb102282b3ff099c78e3118b37348c72f7".parse::<LocalWallet>()?;
+///     let provider = Provider::<Http>::try_from("http://127.0.0.1").unwrap().with_signer(wallet);
+///     Ok(())
+/// }
+/// ```
+/// ## Call RPC methods
+/// ```
+/// use zilliqa_rs::providers::{Http, Provider};
+/// use zilliqa_rs::middlewares::Middleware;
+///
+/// #[tokio::main]
+/// async fn main() -> anyhow::Result<()> {
+///     let provider = Provider::<Http>::try_from("http://127.0.0.1:5555")?.with_chain_id(222);
+///     let balance = provider.get_balance("0x381f4008505e940ad7681ec3468a719060caf796").await;
+///     Ok(())
+/// }
+/// ```
 #[derive(Clone, Debug)]
 pub struct Provider<P> {
     inner: P,
@@ -47,9 +90,6 @@ impl<P: JsonRpcClient> Provider<P> {
     pub async fn send_request<T: Send + DeserializeOwned>(&self, rpc: RPCMethod, params: ArrayParams) -> Result<T, Error> {
         self.inner.request(&rpc.to_string(), params).await
     }
-
-    // TODO: zilliqa-js create_transaction is more complex.
-    // TODO: add createBatchTransaction, createTransactionRaw, createTransactionWithoutConfirm
 }
 
 impl TryFrom<&str> for Provider<Http> {

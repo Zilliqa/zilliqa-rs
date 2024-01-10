@@ -1,0 +1,2 @@
+[env]
+CONTRACTS_PATH = {value = "contracts", relative = true}

@@ -1,4 +1,5 @@
-use crate::{crypto::ZilAddress, providers::CreateTransactionRequest, util::parse_zil};
+use crate::core::CreateTransactionRequest;
+use crate::{crypto::ZilAddress, util::parse_zil};
 
 use super::Version;
 
@@ -18,6 +19,66 @@ pub struct TransactionParams {
 
 /// The TransactionBuilder struct is used to construct transactions with
 /// specified parameters.
+/// # Example
+/// ```
+/// use zilliqa_rs::providers::{Http, Provider};
+/// use zilliqa_rs::core::CreateTransactionResponse;
+/// use zilliqa_rs::transaction::TransactionBuilder;
+/// use zilliqa_rs::signers::LocalWallet;
+/// use zilliqa_rs::util::parse_zil;
+/// use zilliqa_rs::middlewares::Middleware;
+///
+/// #[tokio::main]
+/// async fn main() -> anyhow::Result<()> {
+///     const END_POINT: &str = "http://localhost:5555";
+///
+///     let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
+///
+///     let provider = Provider::<Http>::try_from(END_POINT)?
+///         .with_chain_id(222)
+///         .with_signer(wallet.clone());
+///
+///     let receiver = LocalWallet::create_random()?;
+///     let tx = TransactionBuilder::default()
+///         .to_address(receiver.address)
+///         .amount(parse_zil("0.2")?)
+///         .gas_price(2000000000u128)
+///         .gas_limit(50u64)
+///         .build();
+///
+///     provider.send_transaction_without_confirm::<CreateTransactionResponse>(tx).await?;
+///     Ok(())
+/// }
+/// ```
+/// ## Use pay() function
+/// TransactionBuilder has an auxiliary function named `pay` to simplify payment transaction creation:
+///
+/// ```rust
+/// use zilliqa_rs::providers::{Http, Provider};
+/// use zilliqa_rs::core::CreateTransactionResponse;
+/// use zilliqa_rs::transaction::TransactionBuilder;
+/// use zilliqa_rs::signers::LocalWallet;
+/// use zilliqa_rs::middlewares::Middleware;
+/// use zilliqa_rs::util::parse_zil;
+///
+/// #[tokio::main]
+/// async fn main() -> anyhow::Result<()> {
+///     const END_POINT: &str = "http://localhost:5555";
+///
+///     let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
+///     let provider = Provider::<Http>::try_from(END_POINT)?
+///         .with_chain_id(222)
+///         .with_signer(wallet.clone());
+///
+///     let receiver = LocalWallet::create_random()?;
+///     let amount = parse_zil("0.2")?;
+///
+///     let tx = TransactionBuilder::default().pay(amount, receiver.address.clone()).build();
+///     provider.send_transaction_without_confirm::<CreateTransactionResponse>(tx).await?;
+///
+///     Ok(())
+/// }
+/// ```
 #[derive(Default, Debug)]
 pub struct TransactionBuilder {
     inner_transaction: TransactionParams,
