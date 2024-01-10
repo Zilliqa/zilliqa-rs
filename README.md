@@ -42,6 +42,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
 ```
 
 ## Sending transactions
+### Provider with a signer
+To start sending transactions, we need to change the provider. The provider we had so far, didn't have a signer. That was because we didn't want to send transactions. But now we want, so we need to provide a signer for it:
+
+```rust
+    let wallet = "0xe53d1c3edaffc7a7bab5418eb836cf75819a82872b4a1a0f1c7fcf5c3e020b89"
+        .parse::<LocalWallet>()?;
+
+    let provider = Provider::<Http>::try_from("http://127.0.0.1:5555")?
+        .with_chain_id(222)
+        .with_signer(wallet.clone());
+```
+Here, we create a new wallet from a private key and a provider with that signer. This provider now can be used to send transactions.
+
 Let's transfer some ZIL to a random address. First, we create a random wallet:
 ```rust
     let receiver = LocalWallet::create_random()?;
@@ -120,19 +133,6 @@ impl<T: Middleware> HelloWorld<T> {
 * `get_hello` corresponds to the `getHello` transition.
 * The contract has a field named, `welcome_msg`, to get the value of this field, the `welcome_msg` function should be called.
 * The contract has an immutable state named, `owner` and we passed the value during deployment. To get the value of the owner, we need to call `owner`
-
-### Provider with a signer
-To deploy the contract, we need to change the provider. The provider we had so far, didn't have a signer. That was because we didn't want to send transactions. But to deploy the contract we do need to have a provider with a signer:
-
-```rust
-    let wallet = "0xe53d1c3edaffc7a7bab5418eb836cf75819a82872b4a1a0f1c7fcf5c3e020b89"
-        .parse::<LocalWallet>()?;
-
-    let provider = Provider::<Http>::try_from("http://127.0.0.1:5555")?
-        .with_chain_id(222)
-        .with_signer(wallet.clone());
-```
-Here, we create a new wallet from a private key and a provider with that signer. This provider now can be used to send transactions.
 
 ### Contract Deployment
 Now it's time to deploy the contract:
