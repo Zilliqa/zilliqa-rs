@@ -41,6 +41,43 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 ```
 
+## Sending transactions
+Let's transfer some ZIL to a random address. First, we create a random wallet:
+```rust
+    let receiver = LocalWallet::create_random()?;
+```
+Then we need to compose a transaction. `TransactionBuilder` is used to build a transaction:
+```rust
+    let tx = TransactionBuilder::default()
+        .to_address(receiver.address.clone())
+        .amount(parse_zil("2.0")?)
+        .gas_price(2000000000u128)
+        .gas_limit(50u64)
+        .build();
+```
+Here we are going to transfer 2.0 ZIL to the receiver. Now we need to send the transaction:
+```rust
+    provider
+        .send_transaction_without_confirm::<CreateTransactionResponse>(tx)
+        .await?;
+```
+Now, let's check the balance:
+```rust
+    let balance = provider.get_balance(&receiver.address).await;
+    println!("{balance:?}");
+```
+```bash
+cargo run
+
+Ok(BalanceResponse { nonce: 138, balance: 899999994124734000000000 })
+Ok(BalanceResponse { nonce: 0, balance: 2000000000000 })
+```
+### Using pay function
+TransactionBuilder has an auxiliary function named `pay` to simplify payment transaction creation:
+```rust
+    let tx = TransactionBuilder::default().pay(amount, receiver.address.clone()).build();
+```
+
 ## Working with contracts
 ### Technical notes
 One of the coolest features of zilliqa-rs is generating rust code for your scilla contracts during build time. It means if your contract has a transition like `transfer`, you can call it the same as a normal rust function. If it has a parameter of an address, you must pass an address to this function. And this means all of the beauties of type-checking of rust come to working with scilla contracts.
@@ -185,212 +222,3 @@ Contract owner: ZilAddress("0xd90f2e538CE0Df89c8273CAd3b63ec44a3c4ed82")
 Welcome msg: Hello world!
 Welcome msg: Salaam
 ```
-
-## Send Transaction
-The nonce can be omitted. Then the current nonce is fetched, incremented, and used as the next nonce.
-
-```rust
-use zilliqa_rs::providers::{Http, Provider};
-use zilliqa_rs::core::CreateTransactionResponse;
-use zilliqa_rs::transaction::TransactionBuilder;
-use zilliqa_rs::signers::LocalWallet;
-use zilliqa_rs::middlewares::Middleware;
-
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    const END_POINT: &str = "http://localhost:5555";
-
-    let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
-
-    let provider = Provider::<Http>::try_from(END_POINT)?
-        .with_chain_id(222)
-        .with_signer(wallet.clone());
-
-    let receiver = LocalWallet::create_random()?;
-    let tx = TransactionBuilder::default()
-        .to_address(receiver.address)
-        .amount(200u128 * 10u128.pow(12))
-        .gas_price(2000000000u128)
-        .gas_limit(50u64)
-        .build();
-
-    provider.send_transaction_without_confirm::<CreateTransactionResponse>(tx).await?;
-    Ok(())
-}
-```
-
-### Use pay() function
-TransactionBuilder has an auxiliary function named `pay` to simplify payment transaction creation:
-
-```rust
-use zilliqa_rs::providers::{Http, Provider};
-use zilliqa_rs::core::CreateTransactionResponse;
-use zilliqa_rs::transaction::TransactionBuilder;
-use zilliqa_rs::signers::LocalWallet;
-use zilliqa_rs::middlewares::Middleware;
-use zilliqa_rs::util::parse_zil;
-
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    const END_POINT: &str = "http://localhost:5555";
-
-    let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
-    let provider = Provider::<Http>::try_from(END_POINT)?
-        .with_chain_id(222)
-        .with_signer(wallet.clone());
-
-    let receiver = LocalWallet::create_random()?;
-    let amount = parse_zil("0.2")?;
-
-    let tx = TransactionBuilder::default().pay(amount, receiver.address.clone()).build();
-    provider.send_transaction_without_confirm::<CreateTransactionResponse>(tx).await?;
-
-    Ok(())
-}
-```
-
-## Contracts
-
-### Deployment using rust binding
-You can place your contracts in `contracts` folder or override the default path by exporting `CONTRACTS_PATH` variable. If you have docker installed, all a rust binding will be generated for each contract during build.
-
-So if you have a contract like `Timestamp.scilla` in the contracts folder containing:
-
-```scilla
-scilla_version 0
-
-transition EventTimestamp (bnum: BNum)
-ts <-& TIMESTAMP(bnum);
-e = { _eventname : "TS"; timestamp : ts };
-event e
-end
-```
-
-You can deploy it `contract::Timestamp::deploy`:
-
-```rust
-use std::sync::Arc;
-
-use zilliqa_rs::{
-    contract,
-    providers::{Http, Provider},
-    signers::LocalWallet,
-};
-
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    const END_POINT: &str = "http://localhost:5555";
-
-    let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
-
-    let provider = Provider::<Http>::try_from(END_POINT)?
-        .with_chain_id(222)
-        .with_signer(wallet.clone());
-
-    let contract = contract::Timestamp::deploy(Arc::new(provider)).await?;
-
-    Ok(())
-}
-
-```
-If the contract needs some initial parameters to deploy, You must pass them to `deploy` function, otherwise you won't be able to compile the code.
-
-Instead of using rust binding, it's possible to use `deploy_from_file` or `deploy_str` functions from `ContractFactory` to deploy a contract manually. Take a look at `deploy_contract_without_constructor_parameter` and `deploy_contract_with_constructor_parameter` and `deploy_from_string` tests in the [deployment tests](./tests/deploy_contract.rs)
-
-
-### Calling a transition
-
-The [HelloWorld](./tests/contracts/HelloWorld.scilla) contract has a `setHello` transition. It can be called in rust like:
-```rust
-use std::sync::Arc;
-
-use zilliqa_rs::{
-    contract,
-    core::BNum,
-    providers::{Http, Provider},
-    signers::LocalWallet,
-};
-
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    const END_POINT: &str = "http://localhost:5555";
-
-    let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
-
-    let provider = Provider::<Http>::try_from(END_POINT)?
-        .with_chain_id(222)
-        .with_signer(wallet.clone());
-
-    let contract = contract::HelloWorld::deploy(Arc::new(provider), wallet.address.clone()).await?;
-    contract.set_hello("Salaam".to_string()).call().await?;
-
-    Ok(())
-}
-```
-If a transition needs some parameters, like here, You must pass them too, otherwise you won't be able to compile the code.
-
-### Calling a transaction with custom parameters for nonce, amount, etc.
-It's possible to override default transaction parameters such as nonce and amount.
-```rust
-use zilliqa_rs::{contract, middlewares::Middleware, util::parse_zil, signers::LocalWallet, providers::{Http, Provider}};
-use std::sync::Arc;
-
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    const END_POINT: &str = "http://localhost:5555";
-
-    let wallet = "e53d1c3edaffc7a7bab5418eb836cf75819a82872b4a1a0f1c7fcf5c3e020b89".parse::<LocalWallet>()?;
-
-    let provider = Arc::new(Provider::<Http>::try_from(END_POINT)?
-        .with_chain_id(222)
-        .with_signer(wallet.clone()));
-
-    let contract = contract::SendZil::deploy(provider.clone()).await?;
-    // Override the amount before sending the transaction.
-    contract.accept_zil().amount(parse_zil("0.5")?).call().await?;
-    assert_eq!(provider.get_balance(contract.address()).await?.balance, parse_zil("0.5")?);
-    Ok(())
-}
-```
-
-It's possible to call a transition without using rust binding. Take a look at `call_a_param_less_transition` and `call_transition_with_single_string_param` tests in the [deployment tests](./tests/deploy_contract.rs). 
-
-### Getting the contract's state
-Suppose we have a contract like this: 
-```scilla
-contract HelloWorld
-(owner: ByStr20)
-
-field welcome_msg : String = "Hello world!"
-```
-You can get the latest state of the contract by calling `welcome_msg` function:
-```rust
-use std::sync::Arc;
-
-use zilliqa_rs::{
-    contract,
-    providers::{Http, Provider},
-    signers::LocalWallet,
-};
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    const END_POINT: &str = "http://localhost:5555";
-
-    let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
-
-    let provider = Provider::<Http>::try_from(END_POINT)?
-        .with_chain_id(222)
-        .with_signer(wallet.clone());
-
-    let contract = contract::HelloWorld::deploy(Arc::new(provider), wallet.address.clone()).await?;
-
-    let hello = contract.welcome_msg().await?;
-    assert_eq!(hello, "Hello world!".to_string());
-
-    contract.set_hello("Salaam".to_string()).call().await?;
-    let hello = contract.welcome_msg().await?;
-    assert_eq!(hello, "Salaam".to_string());
-    Ok(())
-}
-```
-As you can see in the above code snippet, you can get individual states like `welcome_msg` through a function with the same name, `welcome_msg()`.

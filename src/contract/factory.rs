@@ -35,7 +35,7 @@ impl<T: Middleware> Factory<T> {
     ///
     /// Returns:
     ///
-    /// a Result object with a value of type BaseContract<T> if the operation is successful, or an Error
+    /// a Result object with a value of type `BaseContract<T>` if the operation is successful, or an Error
     /// object if there is an error.
     pub async fn deploy_from_file(
         &self,
