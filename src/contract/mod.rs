@@ -1,80 +1,95 @@
 /*!
- # Working with Contracts
- One of the coolest features of zilliqa-rs is generating rust code for your scilla contracts during build time. It means if your contract has a transition like `transfer`, you can call it the same as a normal rust function. If it has a parameter of an address, you must pass an address to this function. And this means all of the beauties of type-checking of rust come to working with scilla contracts.
+Interact with scilla contracts.
 
- ## Generating rust code from scilla contracts
- We want to deploy a simple contract named `HelloWorld` and call its `setHello` transition. First, we need to create a folder next to `src`. Let's call it `contracts`. Then we move [HelloWorld.scilla](./tests/contracts/HelloWorld.scilla) to this folder. To let zilliqa-rs scilla-to-rust code generation know about the contracts path, we need to export `CONTRACTS_PATH` environment variable. The simplest way is to create `.cargo/config.toml` file and change it like:
+This module provides everything you need to work with contracts.
+From deployment to call transitions and get fields.
 
- ```toml
- [env]
- CONTRACTS_PATH = {value = "contracts", relative = true}
- ```
- setting `relative` to `true` is crucial. Otherwise, your scilla contracts won't be transpiled to rust. Now, if you build the project using `cargo build`, your HelloWorld.scilla gets converted to rust under the hood.
+One of the coolest features of zilliqa-rs is
+generating rust code for your scilla contracts during build time.
+It means if your contract has a transition like `transfer`,
+you can call it the same as a normal rust function.
+If it has a parameter of an address, you must pass an address to this function.
+And this means all of the beauties of type-checking of rust come to working with scilla contracts.
 
- The generated code is something like this:
+# Generating rust code from scilla contracts
+We want to deploy a simple contract named [HelloWorld] and call its `setHello` transition.
+First, we need to create a folder next to `src`. Let's call it `contracts`.
+Then we move HelloWorld.scilla to this folder.
+To let zilliqa-rs scilla-to-rust code generation know about the contracts path,
+we need to export `CONTRACTS_PATH` environment variable.
+The simplest way is to create `.cargo/config.toml` file and change it like:
 
- ```rust
- impl<T: Middleware> HelloWorld<T> {
-     pub async fn deploy(client: Arc<T> , owner: ZilAddress) -> Result<Self, Error> {
-     }
+```toml
+[env]
+CONTRACTS_PATH = {value = "contracts", relative = true}
+```
+setting `relative` to **`true`** is crucial.
+Otherwise, your scilla contracts won't be transpiled to rust. Now, if you build the project using `cargo build`,
+your [HelloWorld] contract gets converted to rust under the hood.
+The generated code is something like this:
 
-     pub fn address(&self) -> &ZilAddress  {
-     }
+```rust
+impl<T: Middleware> HelloWorld<T> {
+    pub async fn deploy(client: Arc<T> , owner: ZilAddress) -> Result<Self, Error> {
+    }
 
-     pub fn set_hello(&self , msg: String) -> RefMut<'_, transition_call::TransitionCall<T>> {
-     }
+    pub fn address(&self) -> &ZilAddress  {
+    }
 
-     pub fn get_hello(&self ) -> RefMut<'_, transition_call::TransitionCall<T>> {
-     }
+    pub fn set_hello(&self , msg: String) -> RefMut<'_, transition_call::TransitionCall<T>> {
+    }
 
-     pub async fn welcome_msg(&self) -> Result<String, Error> {
-     }
+    pub fn get_hello(&self ) -> RefMut<'_, transition_call::TransitionCall<T>> {
+    }
 
-     pub async fn owner(&self) -> Result<ZilAddress, Error> {
-     }
- }
- ```
- * The `deploy` deploys the contract to the network. Because HelloWorld.scilla contract accepts an address, `owner`, as a deployment parameter, the `deploy` function needs that too. It means you can't deploy it without providing a valid address.
- * The `address` function returns the address of the deployed contract.
- * `set_hello` corresponds to `setHello` transition in the contract. Again, because the transition accepts a string parameter, the `set_hello` function does too.
- * `get_hello` corresponds to the `getHello` transition.
- * The contract has a field named, `welcome_msg`, to get the value of this field, the `welcome_msg` function should be called.
- * The contract has an immutable state named, `owner` and we passed the value during deployment. To get the value of the owner, we need to call `owner`
+    pub async fn welcome_msg(&self) -> Result<String, Error> {
+    }
 
- # Examples
+    pub async fn owner(&self) -> Result<ZilAddress, Error> {
+    }
+}
+```
+* The `deploy` deploys the contract to the network. Because HelloWorld.scilla contract accepts an address, `owner`, as a deployment parameter, the `deploy` function needs that too. It means you can't deploy it without providing a valid address.
+* The `address` function returns the address of the deployed contract.
+* `set_hello` corresponds to `setHello` transition in the contract. Again, because the transition accepts a string parameter, the `set_hello` function does too.
+* `get_hello` corresponds to the `getHello` transition.
+* The contract has a field named, `welcome_msg`, to get the value of this field, the `welcome_msg` function should be called.
+* The contract has an immutable state named, `owner` and we passed the value during deployment. To get the value of the owner, we need to call `owner`
 
- ```
- use std::sync::Arc;
+# Deploying the contract
 
- use zilliqa_rs::{
-     contract,
-     providers::{Http, Provider},
-     signers::LocalWallet,
- };
+Here is the code example to deploy [HelloWorld]:
+```
+use std::sync::Arc;
 
- #[tokio::main]
- async fn main() -> anyhow::Result<()> {
-     const END_POINT: &str = "http://localhost:5555";
+use zilliqa_rs::{
+    contract,
+    providers::{Http, Provider},
+    signers::LocalWallet,
+};
 
-     let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    const END_POINT: &str = "http://localhost:5555";
 
-     let provider = Provider::<Http>::try_from(END_POINT)?
-         .with_chain_id(222)
-         .with_signer(wallet.clone());
+    let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
 
-     let contract = contract::Timestamp::deploy(Arc::new(provider)).await?;
+    let provider = Provider::<Http>::try_from(END_POINT)?
+        .with_chain_id(222)
+        .with_signer(wallet.clone());
 
-     Ok(())
- }
+    let contract = contract::HelloWorld::deploy(Arc::new(provider), wallet.address.clone()).await?;
 
- ```
- If the contract needs some initial parameters, You must pass them to `deploy` function, otherwise you won't be able to compile the code.
+    Ok(())
+}
+```
 
- Instead of using rust binding, it's possible to use `deploy_from_file` or `deploy_str` functions from `ContractFactory` to deploy a contract manually.
+Instead of using rust binding, it's possible to use [ContractFactory::deploy_from_file] or [ContractFactory::deploy_str]
+functions to deploy a contract manually.
 
- ### Calling a transition
+# Calling a transition
 
- The [HelloWorld](./tests/contracts/HelloWorld.scilla) contract has a `setHello` transition. It can be called in rust like:
+The [HelloWorld] contract has a `setHello` transition. It can be called in rust like:
  ```
  use std::sync::Arc;
 
@@ -103,8 +118,11 @@
  ```
  If a transition needs some parameters, like here, You must pass them too, otherwise you won't be able to compile the code.
 
- ### Calling a transaction with custom parameters for nonce, amount, etc.
- It's possible to override default transaction parameters such as nonce and amount.
+## Calling a transaction with custom parameters for nonce, amount, etc.
+
+It's possible to override default transaction parameters such as nonce and amount. Here we call `accept_zil` transition of
+[SendZil] contract:
+
  ```
  use zilliqa_rs::{contract, middlewares::Middleware, util::parse_zil, signers::LocalWallet, providers::{Http, Provider}};
  use std::sync::Arc;
@@ -127,45 +145,44 @@
  }
  ```
 
- It's possible to call a transition without using rust binding. Take a look at `call_a_param_less_transition` and `call_transition_with_single_string_param` tests.
+ It's possible to call a transition without using rust binding.
+ You need to call [BaseContract::call] and provide needed parameters for the transition.
 
- ### Getting the contract's state
- Suppose we have a contract like this:
- ```scilla
- contract HelloWorld
- (owner: ByStr20)
+## Getting the contract's state
+[HelloWorld] contract has a `welcome_msg` field.
+You can get the latest value of this field by calling `welcome_msg` function:
 
- field welcome_msg : String = "Hello world!"
- ```
- You can get the latest state of the contract by calling `welcome_msg` function:
- ```rust
- use std::sync::Arc;
+```rust
+use std::sync::Arc;
 
- use zilliqa_rs::{
-     contract,
-     providers::{Http, Provider},
-     signers::LocalWallet,
- };
- #[tokio::main]
- async fn main() -> anyhow::Result<()> {
-     const END_POINT: &str = "http://localhost:5555";
+use zilliqa_rs::{
+    contract,
+    providers::{Http, Provider},
+    signers::LocalWallet,
+};
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    const END_POINT: &str = "http://localhost:5555";
 
-     let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
+    let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
 
-     let provider = Provider::<Http>::try_from(END_POINT)?
-         .with_chain_id(222)
-         .with_signer(wallet.clone());
+    let provider = Provider::<Http>::try_from(END_POINT)?
+        .with_chain_id(222)
+        .with_signer(wallet.clone());
 
-     let contract = contract::HelloWorld::deploy(Arc::new(provider), wallet.address.clone()).await?;
+    let contract = contract::HelloWorld::deploy(Arc::new(provider), wallet.address.clone()).await?;
 
-     let hello = contract.welcome_msg().await?;
-     assert_eq!(hello, "Hello world!".to_string());
+    let hello = contract.welcome_msg().await?;
+    assert_eq!(hello, "Hello world!".to_string());
 
-     contract.set_hello("Salaam".to_string()).call().await?;
-     let hello = contract.welcome_msg().await?;
-     assert_eq!(hello, "Salaam".to_string());
-     Ok(())
- }
+    contract.set_hello("Salaam".to_string()).call().await?;
+    let hello = contract.welcome_msg().await?;
+    assert_eq!(hello, "Salaam".to_string());
+    Ok(())
+}
+
+[HelloWorld]: https://github.com/Zilliqa/zilliqa-rs/blob/master/tests/contracts/HelloWorld.scilla
+[SendZil]: https://github.com/Zilliqa/zilliqa-rs/blob/master/tests/contracts/SendZil.scilla
 */
 
 pub mod factory;
