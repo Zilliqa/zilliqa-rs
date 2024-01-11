@@ -1,3 +1,5 @@
+//! A unified interface for locally signing zilliqa transactions.
+
 pub mod local_wallet;
 pub mod multi_account_wallet;
 

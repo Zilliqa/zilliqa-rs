@@ -1,3 +1,11 @@
+/*!
+Send transaction to zilliqa network
+
+This module is used to send a transaction to zilliqa network. To compose a transaction,
+It's easier to use [TransactionBuilder].
+
+*/
+
 pub mod builder;
 pub mod version;
 
