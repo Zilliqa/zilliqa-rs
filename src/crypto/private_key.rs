@@ -10,6 +10,10 @@ use super::PublicKey;
 pub struct PrivateKey(k256::SecretKey);
 
 impl PrivateKey {
+    pub fn generate() -> Self {
+        Self(k256::SecretKey::random(&mut rand::thread_rng()))
+    }
+
     pub fn public_key(&self) -> PublicKey {
         PublicKey::new(self.0.public_key())
     }

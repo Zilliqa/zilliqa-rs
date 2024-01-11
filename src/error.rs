@@ -64,9 +64,6 @@ pub enum Error {
     UrlParseError(#[from] url::ParseError),
 
     #[error(transparent)]
-    Secp256k1Error(#[from] secp256k1::Error),
-
-    #[error(transparent)]
     Bech32Error(#[from] bech32::Error),
 
     #[error(transparent)]

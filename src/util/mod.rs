@@ -5,7 +5,7 @@ pub mod validation;
 use crate::Error;
 pub use units::*;
 
-/// Converts given `amount` with `unit` unit to Qa.
+/// Converts given amount with given unit to Qa.
 /// # Example
 /// ```
 /// use zilliqa_rs::util::parse_units;
@@ -48,7 +48,7 @@ where
     }
 }
 
-/// Converts given amount in Qa to `unit`.
+/// Converts given amount in Qa to requested unit.
 /// # Example
 ///
 ///```
@@ -73,7 +73,7 @@ where
     Ok(format!("{integer}.{decimals:0>units$}"))
 }
 
-/// The function `format_zil` formats a given amount in Qa into Zil.
+/// Formats a given amount in Qa into Zil.
 ///
 /// # Example
 /// ```
@@ -87,8 +87,8 @@ pub fn format_zil(amount: u128) -> String {
     format_units(amount, "zil").unwrap()
 }
 
-/// The `parse_zil` function is a convenience function that parses a string representation of an amount
-/// in ZIL into a QA.
+/// Parses an amount in ZIL into a QA.
+///
 /// # Example
 /// ```
 /// use zilliqa_rs::util::parse_zil;

@@ -27,7 +27,6 @@ primitive-types = { version = "0.12.2", features = ["serde"] }
 prost = "0.12.2"
 rand = "0.8.5"
 regex = "1.10.2"
-secp256k1 = {version = "0.28.0", features = ["rand"]}
 serde = { version = "1.0.192", features = ["derive", "rc"] }
 serde-aux = "4.2.0"
 serde_bytes = "0.11.12"

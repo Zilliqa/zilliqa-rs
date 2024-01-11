@@ -95,7 +95,6 @@ impl Signer for MultiAccountWallet {
 #[cfg(test)]
 mod tests {
     use super::MultiAccountWallet;
-    use crate::crypto::util::generate_private_key;
     use claim::assert_none;
 
     #[test]
@@ -114,7 +113,7 @@ mod tests {
     #[test]
     fn add_by_private_key_function_should_create_a_new_account_in_wallet() {
         let mut wallet = MultiAccountWallet::default();
-        let private_key = generate_private_key();
+        let private_key = "0xD96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba";
 
         let local_wallet = wallet.add_by_private_key(&private_key).unwrap();
         assert_eq!(wallet.accounts.len(), 1);

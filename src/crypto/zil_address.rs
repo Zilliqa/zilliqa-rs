@@ -2,14 +2,13 @@ use bech32::{FromBase32, ToBase32, Variant};
 use serde::de::Error as SerdeError;
 use serde::{Deserialize, Deserializer};
 use sha2::Digest;
+use std::ops::BitAnd;
 use std::{fmt::Display, ops::Deref, str::FromStr};
 
-use crate::{
-    util::validation::{is_address, is_bech32},
-    Error,
-};
+use crate::util::validation::is_byte_string;
+use crate::Error;
 
-use super::{to_checksum_address, PublicKey};
+use super::PublicKey;
 
 #[derive(Eq, Hash, Debug, PartialEq, Clone, serde::Serialize, Default)]
 pub struct ZilAddress(String);
@@ -29,7 +28,7 @@ impl TryFrom<&PublicKey> for ZilAddress {
     fn try_from(value: &PublicKey) -> Result<Self, Self::Error> {
         let mut hasher = sha2::Sha256::new();
         hasher.update(value.to_sec1_bytes());
-        Ok(Self(to_checksum_address(&hex::encode(hasher.finalize())[24..])?))
+        Ok(Self(ZilAddress::to_checksum_address(&hex::encode(hasher.finalize())[24..])?))
     }
 }
 
@@ -39,7 +38,38 @@ impl ZilAddress {
 
         let address = hex::encode(Vec::<u8>::from_base32(&data)?);
 
-        Ok(Self(to_checksum_address(&address)?))
+        Ok(Self(ZilAddress::to_checksum_address(&address)?))
+    }
+
+    fn to_checksum_address(address: &str) -> Result<String, Error> {
+        let address = address.replace("0x", "");
+        if !ZilAddress::is_address(&address) {
+            return Err(Error::InvalidAddress(address.to_string()));
+        }
+
+        let mut hasher = sha2::Sha256::new();
+        hasher.update(hex::decode(&address)?);
+        let v = primitive_types::U256::from_big_endian(&hasher.finalize());
+        let ret = address
+            .chars()
+            .enumerate()
+            .map(|(i, c)| {
+                if c.is_ascii_digit() {
+                    c
+                } else {
+                    let cond = v
+                        .bitand(primitive_types::U256::from(2).pow(primitive_types::U256::from(255 - 6 * i)))
+                        .ge(&primitive_types::U256::one());
+                    if cond {
+                        c.to_ascii_uppercase()
+                    } else {
+                        c.to_ascii_lowercase()
+                    }
+                }
+            })
+            .collect::<String>();
+
+        Ok(format!("0x{}", ret))
     }
 
     pub fn to_bech32(&self) -> Result<String, Error> {
@@ -52,6 +82,23 @@ impl ZilAddress {
     pub fn nil() -> Self {
         Self("0x0000000000000000000000000000000000000000".to_string())
     }
+
+    /// Checks if the given raw string slice is a valid bech32 address.
+    ///
+    /// # Example
+    /// ```
+    /// assert!(is_bech32("zil18q05qzzst62q44mgrmp5dzn3jpsv4aukxredu2"))
+    /// ```
+    pub fn is_bech32(raw: &str) -> bool {
+        let regex = regex::Regex::new("^zil1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{38}$")
+            .expect("Failed to create the regex for `is_bech32`");
+
+        regex.is_match(raw)
+    }
+
+    pub fn is_address(address: &str) -> bool {
+        is_byte_string(address, 40)
+    }
 }
 
 impl FromStr for ZilAddress {
@@ -59,9 +106,9 @@ impl FromStr for ZilAddress {
 
     /// Parse a string slice into a ZilAddress.
     fn from_str(addr: &str) -> Result<Self, Self::Err> {
-        if is_address(addr) {
-            Ok(Self(to_checksum_address(addr)?))
-        } else if is_bech32(addr) {
+        if ZilAddress::is_address(addr) {
+            Ok(Self(ZilAddress::to_checksum_address(addr)?))
+        } else if ZilAddress::is_bech32(addr) {
             Self::from_bech32(addr)
         } else {
             Err(Error::InvalidAddress(addr.to_string()))
@@ -121,5 +168,24 @@ mod tests {
 
         let zil_addr: ZilAddress = address.parse().unwrap();
         assert_eq!(zil_addr.to_bech32().unwrap(), bech32_address);
+    }
+
+    #[test]
+    fn is_bech32_should_return_true_for_valid_one() {
+        assert!(ZilAddress::is_bech32("zil18q05qzzst62q44mgrmp5dzn3jpsv4aukxredu2"))
+    }
+
+    #[test]
+    fn is_bech32_should_return_false_for_invalid_ones() {
+        assert!(!ZilAddress::is_bech32("liz18q05qzzst62q44mgrmp5dzn3jpsv4aukxredu2"));
+        assert!(!ZilAddress::is_bech32("zil18q05qzzst62q44mgrmp5dzn3jpsv4aukxredu2ssaas"));
+    }
+
+    #[test]
+    fn to_checksum_address_should_return_correct_value_for_valid_input() {
+        let address = "11223344556677889900aabbccddeeff11223344";
+        let checksum = "0x11223344556677889900AabbccdDeefF11223344";
+
+        assert_eq!(checksum, ZilAddress::to_checksum_address(address).unwrap())
     }
 }

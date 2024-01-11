@@ -1,6 +1,7 @@
 use crate::Error;
 use std::str::FromStr;
 
+#[derive(Debug, PartialEq)]
 pub enum Units {
     Zil,
     Li,
@@ -11,6 +12,15 @@ pub enum Units {
 impl FromStr for Units {
     type Err = Error;
 
+    /// Converts a string representation of a unit into an enum variant, returning
+    /// an error if the string is not recognized.
+    ///
+    /// # Example
+    /// ```
+    /// use zilliqa_rs::util::Units;
+    /// let unit: Units = "ZIL".parse().unwrap();
+    /// assert_eq!(unit, Units::Zil);
+    /// ```
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
             "zil" | "ZIL" => Self::Zil,
@@ -30,6 +40,8 @@ impl TryFrom<&str> for Units {
 }
 
 impl Units {
+    /// Returns the numerical value associated with a given `Units` enum variant.
+    /// This value is used in unit conversion.
     pub fn as_num(&self) -> u32 {
         match self {
             Units::Qa => 0,

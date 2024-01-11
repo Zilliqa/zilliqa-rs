@@ -3,7 +3,7 @@ use std::str::FromStr;
 use k256::ecdsa::Signature;
 
 use crate::{
-    crypto::{generate_private_key, schnorr::sign, PrivateKey, PublicKey, ZilAddress},
+    crypto::{schnorr::sign, PrivateKey, PublicKey, ZilAddress},
     Error,
 };
 
@@ -35,8 +35,7 @@ impl LocalWallet {
     /// Arguments:
     ///
     /// * `private_key`: A string representing the private key.
-    pub fn new(private_key: &str) -> Result<Self, Error> {
-        let private_key = private_key.parse::<PrivateKey>()?;
+    pub fn new(private_key: PrivateKey) -> Result<Self, Error> {
         let address = ZilAddress::try_from(&private_key.public_key())?;
 
         Ok(Self {
@@ -49,8 +48,8 @@ impl LocalWallet {
     /// The function `create_random` generates a random private key and creates a new instance of a struct
     /// using that key.
     pub fn create_random() -> Result<Self, Error> {
-        let private_key = generate_private_key();
-        Self::new(&private_key)
+        let private_key = PrivateKey::generate();
+        Self::new(private_key)
     }
 }
 
@@ -76,6 +75,7 @@ impl FromStr for LocalWallet {
     ///
     /// * `private_key`: A string representing the private key.
     fn from_str(private_key: &str) -> Result<Self, Self::Err> {
+        let private_key: PrivateKey = private_key.parse()?;
         Self::new(private_key)
     }
 }
@@ -104,7 +104,9 @@ mod tests {
 
     #[test]
     fn a_valid_private_key_should_results_a_valid_account_with_new() {
-        let account = LocalWallet::new("0xD96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba").unwrap();
+        let account: LocalWallet = "0xD96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba"
+            .parse()
+            .unwrap();
         assert_eq!(
             account.address(),
             &"0x381f4008505e940AD7681EC3468a719060caF796".parse::<ZilAddress>().unwrap()
@@ -113,7 +115,9 @@ mod tests {
 
     #[test]
     fn sign_should_return_signature() {
-        let account = LocalWallet::new("0xD96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba").unwrap();
+        let account: LocalWallet = "0xD96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba"
+            .parse()
+            .unwrap();
 
         let signature = account.sign(&hex::decode("11223344aabb").unwrap());
         println!("{} {}", signature.r().to_string(), signature.s().to_string());
