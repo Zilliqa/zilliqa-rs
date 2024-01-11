@@ -1,5 +1,6 @@
+//! Clients for interacting with zilliqa network.
+
 pub mod http;
-mod macros;
 pub mod provider;
 
 pub use http::Http;
