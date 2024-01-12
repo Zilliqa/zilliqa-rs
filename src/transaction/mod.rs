@@ -15,7 +15,7 @@ pub use builder::*;
 pub use version::*;
 
 use crate::{
-    core::GetTransactionResponse,
+    core::{GetTransactionResponse, TxHash},
     middlewares::Middleware,
     providers::{JsonRpcClient, Provider},
     Error,
@@ -23,7 +23,7 @@ use crate::{
 
 #[derive(Debug)]
 pub struct Transaction<'a, T: JsonRpcClient> {
-    pub id: String,
+    pub id: TxHash,
     client: &'a Provider<T>,
     status: Cell<TxStatus>,
 }
@@ -37,7 +37,7 @@ pub enum TxStatus {
 }
 
 impl<'a, T: JsonRpcClient> Transaction<'a, T> {
-    pub fn new(id: String, client: &'a Provider<T>) -> Self {
+    pub fn new(id: TxHash, client: &'a Provider<T>) -> Self {
         Self {
             id,
             client,

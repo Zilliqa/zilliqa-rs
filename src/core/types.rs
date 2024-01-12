@@ -5,7 +5,7 @@ use prost::Message;
 use serde::{Deserialize, Serialize, Serializer};
 use serde_aux::field_attributes::deserialize_number_from_string;
 
-use super::proto;
+use super::{proto, TxHash};
 use crate::{crypto::ZilAddress, transaction::Version};
 
 #[derive(Deserialize, Debug, Clone)]
@@ -59,7 +59,7 @@ pub fn to_str<S: Serializer, T: Display>(data: T, serializer: S) -> Result<S::Ok
 #[derive(Deserialize, Debug, Clone)]
 pub struct CreateTransactionResponse {
     #[serde(rename = "TranID")]
-    pub tran_id: String,
+    pub tran_id: TxHash,
 
     #[serde(rename = "Info")]
     pub info: String,

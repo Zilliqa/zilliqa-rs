@@ -1,6 +1,7 @@
 use crate::core::{
     net::RPCMethod::{self, *},
     types::*,
+    TxHash,
 };
 use async_trait::async_trait;
 use jsonrpsee::{core::params::ArrayParams, rpc_params};
@@ -145,12 +146,14 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         Ok(self.send_request(CreateTransaction, rpc_params![tx]).await?)
     }
 
-    async fn get_transaction(&self, tx_hash: &str) -> Result<GetTransactionResponse, Error> {
-        Ok(self.send_request(GetTransaction, rpc_params![tx_hash]).await?)
+    async fn get_transaction(&self, tx_hash: &TxHash) -> Result<GetTransactionResponse, Error> {
+        Ok(self.send_request(GetTransaction, rpc_params![tx_hash.to_string()]).await?)
     }
 
-    async fn get_transaction_status(&self, tx_hash: &str) -> Result<TransactionStatus, Error> {
-        Ok(self.send_request(GetTransactionStatus, rpc_params![tx_hash]).await?)
+    async fn get_transaction_status(&self, tx_hash: &TxHash) -> Result<TransactionStatus, Error> {
+        Ok(self
+            .send_request(GetTransactionStatus, rpc_params![tx_hash.to_string()])
+            .await?)
     }
 
     async fn get_balance(&self, address: &str) -> Result<BalanceResponse, Error> {
@@ -273,9 +276,9 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         Ok(self.send_request(GetMinimumGasPrice, rpc_params![]).await?)
     }
 
-    async fn get_contract_address_from_transaction_id(&self, tx_hash: &str) -> Result<String, Error> {
+    async fn get_contract_address_from_transaction_id(&self, tx_hash: &TxHash) -> Result<String, Error> {
         Ok(self
-            .send_request(GetContractAddressFromTransactionId, rpc_params![tx_hash])
+            .send_request(GetContractAddressFromTransactionId, rpc_params![tx_hash.to_string()])
             .await?)
     }
 

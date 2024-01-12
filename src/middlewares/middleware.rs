@@ -1,9 +1,8 @@
 use crate::{
-    core::types::*,
+    core::{types::*, TxHash},
     crypto::{Signature, ZilAddress},
     providers::{JsonRpcClient, Provider},
     transaction::Transaction,
-    util::validation::is_tx_hash,
     Error,
 };
 use async_trait::async_trait;
@@ -72,11 +71,7 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
     /// Arguments:
     ///
     /// * `tx_hash`: A string representing the transaction hash.
-    async fn get_transaction_status(&self, tx_hash: &str) -> Result<TransactionStatus, Error> {
-        if !is_tx_hash(tx_hash) {
-            return Err(Error::InvalidTransactionHash(tx_hash.to_string()));
-        }
-
+    async fn get_transaction_status(&self, tx_hash: &TxHash) -> Result<TransactionStatus, Error> {
         self.inner().get_transaction_status(tx_hash).await
     }
 
@@ -85,11 +80,7 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
     /// Arguments:
     ///
     /// * `tx_hash`: A string representing the transaction hash.
-    async fn get_transaction(&self, tx_hash: &str) -> Result<GetTransactionResponse, Error> {
-        if !is_tx_hash(tx_hash) {
-            return Err(Error::InvalidTransactionHash(tx_hash.to_string()));
-        }
-
+    async fn get_transaction(&self, tx_hash: &TxHash) -> Result<GetTransactionResponse, Error> {
         self.inner().get_transaction(tx_hash).await
     }
 
@@ -210,11 +201,7 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
         self.inner().get_smart_contracts(owner).await
     }
 
-    async fn get_contract_address_from_transaction_id(&self, tx_hash: &str) -> Result<String, Error> {
-        if !is_tx_hash(tx_hash) {
-            return Err(Error::InvalidTransactionHash(tx_hash.to_string()));
-        }
-
+    async fn get_contract_address_from_transaction_id(&self, tx_hash: &TxHash) -> Result<String, Error> {
         self.inner().get_contract_address_from_transaction_id(tx_hash).await
     }
 

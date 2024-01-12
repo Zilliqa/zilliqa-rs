@@ -1,5 +1,8 @@
+use std::str::FromStr;
+
 use claim::assert_ok;
 use paste::paste;
+use zilliqa_rs::core::TxHash;
 use zilliqa_rs::crypto::ZilAddress;
 use zilliqa_rs::middlewares::Middleware;
 use zilliqa_rs::providers::{Http, Provider};
@@ -87,17 +90,17 @@ rpc_method_test!(GetNumTxnsDsEpoch, "1");
 rpc_method_test!(GetMinimumGasPrice);
 rpc_method_test!(
     GetTransactionStatus,
-    "d95f28e4585220fb2f368cfa4ddcc0890b7ac0a90a3e8735ab29aeaf554f9f66"
+    &TxHash::from_str("d95f28e4585220fb2f368cfa4ddcc0890b7ac0a90a3e8735ab29aeaf554f9f66").unwrap()
 );
 
 rpc_method_test!(
     GetTransaction,
-    "d95f28e4585220fb2f368cfa4ddcc0890b7ac0a90a3e8735ab29aeaf554f9f66"
+    &TxHash::from_str("d95f28e4585220fb2f368cfa4ddcc0890b7ac0a90a3e8735ab29aeaf554f9f66").unwrap()
 );
 
 rpc_method_test!(
     GetContractAddressFromTransactionId,
-    "5592035396c7a5b160dbe99e0634a315e0f5fbd07366a4c1785836803ed96b9c"
+    &TxHash::from_str("5592035396c7a5b160dbe99e0634a315e0f5fbd07366a4c1785836803ed96b9c").unwrap()
 );
 
 rpc_method_test!(
