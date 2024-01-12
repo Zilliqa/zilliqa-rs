@@ -77,7 +77,7 @@ pub fn verify(message: &[u8], public_key: &PublicKey, signature: &Signature) -> 
 mod tests {
     use k256::{elliptic_curve::PrimeField, FieldBytes, Scalar};
 
-    use crate::crypto::{PrivateKey, PublicKey};
+    use crate::core::{PrivateKey, PublicKey};
 
     use super::verify;
 
