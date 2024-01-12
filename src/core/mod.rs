@@ -107,7 +107,7 @@ impl PrivateKey {
     /// use zilliqa_rs::core::PrivateKey;
     /// let private_key = PrivateKey::generate();
     /// ```
-    pub fn generate() -> Self {
+    pub fn create_random() -> Self {
         Self(k256::SecretKey::random(&mut rand::thread_rng()))
     }
 

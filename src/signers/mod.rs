@@ -10,6 +10,9 @@ use k256::ecdsa::Signature;
 use crate::core::CreateTransactionRequest;
 use crate::core::{PublicKey, ZilAddress};
 
+/// Trait for signing transactions and messages.
+///
+/// Implement this trait to support different signing modes, e.g. Ledger, hosted etc.
 pub trait Signer {
     fn sign(&self, message: &[u8]) -> Signature;
     fn sign_transaction(&self, tx: &CreateTransactionRequest) -> Signature {

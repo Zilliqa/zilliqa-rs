@@ -1,3 +1,5 @@
+//! Different error variations that are possible in zilliqa-rs
+
 use std::num::ParseIntError;
 
 use thiserror::Error as ThisError;
