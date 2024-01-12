@@ -80,15 +80,43 @@ impl<P: JsonRpcClient> Provider<P> {
         }
     }
 
+    /// Creates a new Provider with a signer.
+    /// # Example
+    /// ```
+    /// use zilliqa_rs::providers::{Http, Provider};
+    /// use zilliqa_rs::signers::LocalWallet;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> anyhow::Result<()> {
+    ///     let wallet = "dcf2cbdd171a21c480aa7f53d77f31bb102282b3ff099c78e3118b37348c72f7".parse::<LocalWallet>()?;
+    ///     let provider = Provider::<Http>::try_from("http://127.0.0.1").unwrap().with_signer(wallet);
+    ///     Ok(())
+    /// }
+    /// ```
     pub fn with_signer<S: Signer>(self, signer: S) -> SignerMiddleware<Self, S> {
         SignerMiddleware::new(self, signer)
     }
 
+    /// Creates a new Provider with the given chain id.
+    /// # Example
+    /// ```
+    /// use zilliqa_rs::providers::{Http, Provider};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> anyhow::Result<()> {
+    ///     let provider = Provider::<Http>::try_from("http://127.0.0.1:5555").unwrap().with_chain_id(1);
+    ///     Ok(())
+    /// }
+    /// ```
     pub fn with_chain_id(mut self, chain_id: u16) -> Self {
         self.chain_id = chain_id;
         self
     }
 
+    /// Sends a JSON-RPC method.
+    ///
+    /// You don't need to call this function directly.
+    /// You can call functions in [Middleware] for calling a JSON-RPC endpoint.
     pub async fn send_request<T: Send + DeserializeOwned>(&self, rpc: RPCMethod, params: ArrayParams) -> Result<T, Error> {
         self.inner.request(&rpc.to_string(), params).await
     }
