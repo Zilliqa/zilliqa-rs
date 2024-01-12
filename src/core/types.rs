@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt;
 
 use primitive_types::H160;
 use prost::Message;
@@ -7,6 +7,76 @@ use serde_aux::field_attributes::deserialize_number_from_string;
 
 use super::{proto, TxHash, ZilAddress};
 use crate::transaction::Version;
+
+#[derive(Debug)]
+pub enum RPCMethod {
+    // Network-related methods
+    GetNetworkId,
+
+    // Blockchain-related methods
+    GetBlockchainInfo,
+    GetShardingStructure,
+    GetDsBlock,
+    GetLatestDsBlock,
+    GetNumDsBlocks,
+    GetDsBlockRate,
+    DsBlockListing,
+    GetTxBlock,
+    GetLatestTxBlock,
+    GetNumTxBlocks,
+    GetTxBlockRate,
+    TxBlockListing,
+    GetNumTransactions,
+    GetTransactionRate,
+    GetCurrentMiniEpoch,
+    GetCurrentDsEpoch,
+    GetPrevDifficulty,
+    GetPrevDsDifficulty,
+    GetTotalCoinSupply,
+    GetMinerInfo,
+
+    // Transaction-related methods
+    CreateTransaction,
+    GetTransaction,
+    GetTransactionStatus,
+    GetRecentTransactions,
+    GetTransactionsForTxBlock,
+    GetTransactionsForTxBlockEx,
+    GetTxnBodiesForTxBlock,
+    GetTxnBodiesForTxBlockEx,
+    GetNumTxnsTxEpoch,
+    GetNumTxnsDsEpoch,
+    GetMinimumGasPrice,
+
+    // Contract-related methods
+    GetContractAddressFromTransactionId,
+    GetSmartContracts,
+    GetSmartContractCode,
+    GetSmartContractInit,
+    GetSmartContractState,
+    GetSmartContractSubState,
+    GetStateProof,
+
+    // Account-related methods
+    GetBalance,
+}
+
+impl fmt::Display for RPCMethod {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::DsBlockListing => write!(f, "DSBlockListing"),
+            Self::GetNumDsBlocks => write!(f, "GetNumDSBlocks"),
+            Self::GetDsBlockRate => write!(f, "GetDSBlockRate"),
+            Self::GetCurrentDsEpoch => write!(f, "GetCurrentDSEpoch"),
+            Self::GetPrevDsDifficulty => write!(f, "GetPrevDSDifficulty"),
+            Self::GetNumTxnsDsEpoch => write!(f, "GetNumTxnsDSEpoch"),
+            Self::GetContractAddressFromTransactionId => {
+                write!(f, "GetContractAddressFromTransactionID")
+            }
+            _ => fmt::Debug::fmt(self, f),
+        }
+    }
+}
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct BalanceResponse {
@@ -52,7 +122,7 @@ impl CreateTransactionRequest {
     }
 }
 
-pub fn to_str<S: Serializer, T: Display>(data: T, serializer: S) -> Result<S::Ok, S::Error> {
+pub fn to_str<S: Serializer, T: fmt::Display>(data: T, serializer: S) -> Result<S::Ok, S::Error> {
     serializer.serialize_str(&data.to_string())
 }
 

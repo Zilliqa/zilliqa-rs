@@ -1,5 +1,5 @@
 use crate::core::{
-    net::RPCMethod::{self, *},
+    types::RPCMethod::{self, *},
     types::*,
     TxHash,
 };

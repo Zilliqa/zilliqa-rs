@@ -1,6 +1,6 @@
 mod common;
 
-use crate::core::TestContext;
+use crate::common::TestContext;
 use test_context::test_context;
 use zilliqa_rs::{
     contract,
