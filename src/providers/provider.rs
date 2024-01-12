@@ -140,7 +140,7 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
     }
 
     async fn create_transaction<T: DeserializeOwned + Send>(&self, tx: CreateTransactionRequest) -> Result<T, Error> {
-        if !tx.version.valid() {
+        if !tx.version.is_valid() {
             return Err(Error::InvalidVersionIsSetForTransaction(tx.version));
         }
 

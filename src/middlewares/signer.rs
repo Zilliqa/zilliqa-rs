@@ -44,7 +44,7 @@ impl<M: Middleware, S: Signer + Debug + Sync + Send> Middleware for SignerMiddle
         &self,
         mut tx: CreateTransactionRequest,
     ) -> Result<T, Error> {
-        if !tx.version.valid() {
+        if !tx.version.is_valid() {
             tx.version = Version::new(self.inner().chainid());
         }
 
