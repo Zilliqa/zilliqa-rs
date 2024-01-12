@@ -105,7 +105,7 @@ impl PrivateKey {
     /// # Example
     /// ```
     /// use zilliqa_rs::core::PrivateKey;
-    /// let private_key = PrivateKey::generate();
+    /// let private_key = PrivateKey::create_random();
     /// ```
     pub fn create_random() -> Self {
         Self(k256::SecretKey::random(&mut rand::thread_rng()))
@@ -299,7 +299,9 @@ impl ZilAddress {
     ///
     /// # Example
     /// ```
-    /// assert!(is_bech32("zil18q05qzzst62q44mgrmp5dzn3jpsv4aukxredu2"))
+    /// use zilliqa_rs::core::ZilAddress;
+    ///
+    /// assert!(ZilAddress::is_bech32("zil18q05qzzst62q44mgrmp5dzn3jpsv4aukxredu2"))
     /// ```
     pub fn is_bech32(raw: &str) -> bool {
         let regex = regex::Regex::new("^zil1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{38}$")

@@ -28,7 +28,7 @@ Otherwise, your scilla contracts won't be transpiled to rust. Now, if you build 
 your [HelloWorld] contract gets converted to rust under the hood.
 The generated code is something like this:
 
-```rust
+```rust,ignore
 impl<T: Middleware> HelloWorld<T> {
     pub async fn deploy(client: Arc<T> , owner: ZilAddress) -> Result<Self, Error> {
     }

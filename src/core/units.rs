@@ -19,7 +19,7 @@ impl FromStr for Units {
     ///
     /// # Example
     /// ```
-    /// use zilliqa_rs::util::Units;
+    /// use zilliqa_rs::core::Units;
     /// let unit: Units = "ZIL".parse().unwrap();
     /// assert_eq!(unit, Units::Zil);
     /// ```
@@ -57,7 +57,7 @@ impl Units {
 /// Converts given amount with given unit to Qa.
 /// # Example
 /// ```
-/// use zilliqa_rs::util::parse_units;
+/// use zilliqa_rs::core::parse_units;
 /// let amount_in_zil = 15230001000000_u128;
 /// let amount_in_li = 15230001_u128;
 /// let amount_in_qa = 15_u128;
@@ -101,7 +101,7 @@ where
 /// # Example
 ///
 ///```
-/// use zilliqa_rs::util::format_units;
+/// use zilliqa_rs::core::format_units;
 ///
 ///let zil = format_units(1395633240123_u128, "zil").unwrap();
 ///assert_eq!(zil, "1.395633240123");
@@ -126,7 +126,7 @@ where
 ///
 /// # Example
 /// ```
-/// use zilliqa_rs::util::format_zil;
+/// use zilliqa_rs::core::format_zil;
 ///
 /// let zil = format_zil(1395633240123_u128);
 /// assert_eq!(zil, "1.395633240123");

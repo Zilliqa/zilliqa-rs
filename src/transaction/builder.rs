@@ -200,9 +200,14 @@ impl TransactionBuilder {
     ///
     /// # Example
     /// ```
+    /// use zilliqa_rs::transaction::TransactionBuilder;
+    /// use zilliqa_rs::core::parse_zil;
+    /// use zilliqa_rs::signers::LocalWallet;
+    ///
+    /// let receiver = LocalWallet::create_random().unwrap();
     /// let tx = TransactionBuilder::default()
     ///     .to_address(receiver.address)
-    ///     .amount(parse_zil("0.2")?)
+    ///     .amount(parse_zil("0.2").unwrap())
     ///     .gas_price(2000000000u128)
     ///     .gas_limit(50u64)
     ///     .build();
