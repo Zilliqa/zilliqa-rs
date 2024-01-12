@@ -5,12 +5,12 @@ use claim::assert_gt;
 use common::TestContext;
 use test_context::test_context;
 use zilliqa_rs::{
+    core::parse_zil,
     core::CreateTransactionResponse,
     middlewares::Middleware,
     providers::{Http, Provider},
     signers::LocalWallet,
     transaction::{TransactionBuilder, Version},
-    util::parse_zil,
     Error,
 };
 

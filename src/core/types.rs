@@ -1,3 +1,5 @@
+//! JSON-RPC related data types.
+
 use std::fmt;
 
 use primitive_types::H160;

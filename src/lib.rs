@@ -49,8 +49,6 @@ pub mod middlewares;
 pub mod providers;
 pub mod signers;
 pub mod transaction;
-pub mod util;
-
 pub use error::Error;
 
 /// Run them with `cargo test --doc`

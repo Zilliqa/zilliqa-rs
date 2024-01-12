@@ -1,5 +1,5 @@
+use crate::core::parse_zil;
 use crate::core::{CreateTransactionRequest, ZilAddress};
-use crate::util::parse_zil;
 
 use super::Version;
 
@@ -25,7 +25,7 @@ pub struct TransactionParams {
 /// use zilliqa_rs::core::CreateTransactionResponse;
 /// use zilliqa_rs::transaction::TransactionBuilder;
 /// use zilliqa_rs::signers::LocalWallet;
-/// use zilliqa_rs::util::parse_zil;
+/// use zilliqa_rs::core::parse_zil;
 /// use zilliqa_rs::middlewares::Middleware;
 ///
 /// #[tokio::main]
@@ -59,7 +59,7 @@ pub struct TransactionParams {
 /// use zilliqa_rs::transaction::TransactionBuilder;
 /// use zilliqa_rs::signers::LocalWallet;
 /// use zilliqa_rs::middlewares::Middleware;
-/// use zilliqa_rs::util::parse_zil;
+/// use zilliqa_rs::core::parse_zil;
 ///
 /// #[tokio::main]
 /// async fn main() -> anyhow::Result<()> {

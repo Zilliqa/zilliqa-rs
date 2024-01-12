@@ -184,7 +184,7 @@ use zilliqa_rs::{
     providers::{Http, Provider},
     signers::LocalWallet,
     transaction::TransactionBuilder,
-    util::parse_zil,
+    core::parse_zil,
 };
 
 #[tokio::main]

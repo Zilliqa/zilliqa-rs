@@ -1,10 +1,10 @@
 use std::{path::Path, sync::Arc};
 
 use crate::{
+    core::parse_zil,
     core::ZilAddress,
     middlewares::Middleware,
     transaction::{TransactionBuilder, TransactionParams},
-    util::parse_zil,
     Error,
 };
 

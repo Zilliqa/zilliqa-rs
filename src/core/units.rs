@@ -1,3 +1,5 @@
+//! Utility functions for unit conversion.
+
 use crate::Error;
 use std::str::FromStr;
 
@@ -138,7 +140,7 @@ pub fn format_zil(amount: u128) -> String {
 ///
 /// # Example
 /// ```
-/// use zilliqa_rs::util::parse_zil;
+/// use zilliqa_rs::core::parse_zil;
 ///
 /// let amount_in_qa = 15230001000000;
 /// assert_eq!(amount_in_qa, parse_zil("15.230001").unwrap());

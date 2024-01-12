@@ -124,7 +124,7 @@ It's possible to override default transaction parameters such as nonce and amoun
 [SendZil] contract:
 
  ```
- use zilliqa_rs::{contract, middlewares::Middleware, util::parse_zil, signers::LocalWallet, providers::{Http, Provider}};
+ use zilliqa_rs::{contract, middlewares::Middleware, core::parse_zil, signers::LocalWallet, providers::{Http, Provider}};
  use std::sync::Arc;
 
  #[tokio::main]
