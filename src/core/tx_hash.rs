@@ -2,7 +2,7 @@ use std::{fmt::Display, str::FromStr};
 
 use serde::Deserialize;
 
-use crate::{util::validation::is_byte_string, Error};
+use crate::{util::is_byte_string, Error};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct TxHash(String);

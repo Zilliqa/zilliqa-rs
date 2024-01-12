@@ -5,7 +5,7 @@ use sha2::Digest;
 use std::ops::BitAnd;
 use std::{fmt::Display, ops::Deref, str::FromStr};
 
-use crate::util::validation::is_byte_string;
+use crate::util::is_byte_string;
 use crate::Error;
 
 use super::PublicKey;
