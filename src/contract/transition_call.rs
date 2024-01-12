@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-    core::GetTransactionResponse,
-    crypto::ZilAddress,
+    core::{GetTransactionResponse, ZilAddress},
     middlewares::Middleware,
     transaction::{TransactionBuilder, TransactionParams},
     util::parse_zil,

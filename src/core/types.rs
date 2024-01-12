@@ -5,8 +5,8 @@ use prost::Message;
 use serde::{Deserialize, Serialize, Serializer};
 use serde_aux::field_attributes::deserialize_number_from_string;
 
-use super::{proto, TxHash};
-use crate::{crypto::ZilAddress, transaction::Version};
+use super::{proto, TxHash, ZilAddress};
+use crate::transaction::Version;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct BalanceResponse {

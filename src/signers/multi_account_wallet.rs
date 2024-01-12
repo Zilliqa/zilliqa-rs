@@ -1,6 +1,6 @@
 use std::{collections::HashMap, rc::Rc};
 
-use crate::{crypto::ZilAddress, Error};
+use crate::{core::ZilAddress, Error};
 
 use super::{LocalWallet, Signer};
 
@@ -83,7 +83,7 @@ impl Signer for MultiAccountWallet {
     }
 
     // FIXME:
-    fn public_key(&self) -> &crate::crypto::PublicKey {
+    fn public_key(&self) -> &crate::core::PublicKey {
         todo!()
     }
 

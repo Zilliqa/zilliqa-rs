@@ -196,9 +196,9 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 pub use transition_call::*;
 
-use crate::core::{EventParam, GetTransactionResponse};
+use crate::core::{EventParam, GetTransactionResponse, ZilAddress};
 use crate::signers::Signer;
-use crate::{crypto::ZilAddress, middlewares::Middleware, transaction::TransactionParams, Error};
+use crate::{middlewares::Middleware, transaction::TransactionParams, Error};
 
 #[derive(Debug)]
 pub struct BaseContract<T: Middleware> {

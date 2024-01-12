@@ -1,5 +1,5 @@
-use crate::core::CreateTransactionRequest;
-use crate::{crypto::ZilAddress, util::parse_zil};
+use crate::core::{CreateTransactionRequest, ZilAddress};
+use crate::util::parse_zil;
 
 use super::Version;
 

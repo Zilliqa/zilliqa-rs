@@ -3,7 +3,7 @@ use std::str::FromStr;
 use claim::assert_ok;
 use paste::paste;
 use zilliqa_rs::core::TxHash;
-use zilliqa_rs::crypto::ZilAddress;
+use zilliqa_rs::core::ZilAddress;
 use zilliqa_rs::middlewares::Middleware;
 use zilliqa_rs::providers::{Http, Provider};
 

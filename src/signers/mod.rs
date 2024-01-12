@@ -8,7 +8,7 @@ pub use local_wallet::LocalWallet;
 use k256::ecdsa::Signature;
 
 use crate::core::CreateTransactionRequest;
-use crate::crypto::{PublicKey, ZilAddress};
+use crate::core::{PublicKey, ZilAddress};
 
 pub trait Signer {
     fn sign(&self, message: &[u8]) -> Signature;

@@ -9,7 +9,8 @@ use serde::de::DeserializeOwned;
 use url::Url;
 
 use crate::{
-    crypto::{Signature, ZilAddress},
+    core::ZilAddress,
+    crypto::Signature,
     middlewares::{signer::SignerMiddleware, Middleware},
     signers::Signer,
     Error,

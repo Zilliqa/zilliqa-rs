@@ -137,7 +137,7 @@ impl<'de> Deserialize<'de> for ZilAddress {
 mod tests {
     use claim::assert_ok;
 
-    use crate::crypto::ZilAddress;
+    use crate::core::ZilAddress;
 
     #[test]
     fn valid_address_should_parse_correctly() {

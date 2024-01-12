@@ -1,4 +1,5 @@
-use super::{PrivateKey, PublicKey, Signature};
+use super::Signature;
+use crate::core::{PrivateKey, PublicKey};
 use k256::{
     elliptic_curve::{ops::Reduce, sec1::ToEncodedPoint, Group},
     AffinePoint, Scalar, U256,

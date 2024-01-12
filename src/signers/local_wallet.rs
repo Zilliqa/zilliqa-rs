@@ -3,7 +3,8 @@ use std::str::FromStr;
 use k256::ecdsa::Signature;
 
 use crate::{
-    crypto::{schnorr::sign, PrivateKey, PublicKey, ZilAddress},
+    core::{PrivateKey, PublicKey, ZilAddress},
+    crypto::schnorr::sign,
     Error,
 };
 
@@ -84,10 +85,7 @@ impl FromStr for LocalWallet {
 mod tests {
     use claim::assert_some;
 
-    use crate::{
-        crypto::{schnorr::verify, ZilAddress},
-        signers::Signer,
-    };
+    use crate::{core::ZilAddress, crypto::schnorr::verify, signers::Signer};
 
     use super::LocalWallet;
 
