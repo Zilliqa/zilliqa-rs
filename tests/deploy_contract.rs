@@ -1,7 +1,7 @@
 mod common;
 
 use common::TestContext;
-use std::{path::PathBuf, sync::Arc};
+use std::{path::PathBuf, str::FromStr, sync::Arc};
 use test_context::test_context;
 
 use anyhow::Result;
@@ -191,7 +191,7 @@ async fn call_transition_with_single_string_param_using_rust_binding(ctx: &TestC
 #[test_context(TestContext)]
 #[tokio::test]
 async fn call_transition_with_a_different_signer(ctx: &TestContext) -> Result<()> {
-    let wallet = LocalWallet::new("d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba").unwrap();
+    let wallet = LocalWallet::from_str("d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba").unwrap();
     let provider = Arc::new(
         Provider::try_from(ctx.endpoint.clone())
             .unwrap()
@@ -200,7 +200,7 @@ async fn call_transition_with_a_different_signer(ctx: &TestContext) -> Result<()
     );
     let contract = contract::HelloWorld::deploy(provider, ctx.wallet.address.clone()).await?;
 
-    let wallet = LocalWallet::new("589417286a3213dceb37f8f89bd164c3505a4cec9200c61f7c6db13a30a71b45").unwrap();
+    let wallet = LocalWallet::from_str("589417286a3213dceb37f8f89bd164c3505a4cec9200c61f7c6db13a30a71b45").unwrap();
     let new_provider = Arc::new(
         Provider::try_from(ctx.endpoint.clone())
             .unwrap()

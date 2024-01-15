@@ -2,7 +2,10 @@ use std::{collections::HashMap, hash::Hash};
 
 use serde::Deserialize;
 
-use crate::{core::BNum, crypto::ZilAddress, Error};
+use crate::{
+    core::{BNum, ZilAddress},
+    Error,
+};
 
 #[derive(serde::Serialize, Debug, Clone, Deserialize)]
 #[serde(untagged)]
@@ -320,7 +323,7 @@ mod tests {
 
     use serde_json::json;
 
-    use crate::crypto::ZilAddress;
+    use crate::core::ZilAddress;
 
     use super::ToScillaValue;
 

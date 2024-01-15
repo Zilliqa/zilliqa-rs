@@ -1,7 +1,10 @@
 mod common;
 use common::TestContext;
 use test_context::test_context;
-use zilliqa_rs::{contract, core::BNum, crypto::ZilAddress};
+use zilliqa_rs::{
+    contract,
+    core::{BNum, ZilAddress},
+};
 
 #[test_context(TestContext)]
 #[tokio::test]

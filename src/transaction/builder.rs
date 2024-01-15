@@ -1,5 +1,5 @@
-use crate::core::CreateTransactionRequest;
-use crate::{crypto::ZilAddress, util::parse_zil};
+use crate::core::parse_zil;
+use crate::core::{CreateTransactionRequest, ZilAddress};
 
 use super::Version;
 
@@ -17,15 +17,18 @@ pub struct TransactionParams {
     pub signature: Option<String>,
 }
 
+/// A builder to compose transaction.
+///
 /// The TransactionBuilder struct is used to construct transactions with
 /// specified parameters.
+///
 /// # Example
 /// ```
 /// use zilliqa_rs::providers::{Http, Provider};
 /// use zilliqa_rs::core::CreateTransactionResponse;
 /// use zilliqa_rs::transaction::TransactionBuilder;
 /// use zilliqa_rs::signers::LocalWallet;
-/// use zilliqa_rs::util::parse_zil;
+/// use zilliqa_rs::core::parse_zil;
 /// use zilliqa_rs::middlewares::Middleware;
 ///
 /// #[tokio::main]
@@ -59,7 +62,7 @@ pub struct TransactionParams {
 /// use zilliqa_rs::transaction::TransactionBuilder;
 /// use zilliqa_rs::signers::LocalWallet;
 /// use zilliqa_rs::middlewares::Middleware;
-/// use zilliqa_rs::util::parse_zil;
+/// use zilliqa_rs::core::parse_zil;
 ///
 /// #[tokio::main]
 /// async fn main() -> anyhow::Result<()> {
@@ -85,32 +88,50 @@ pub struct TransactionBuilder {
 }
 
 impl TransactionBuilder {
+    /// Simplify payment transaction creation.
+    ///
+    /// # Example
+    /// ```
+    /// use zilliqa_rs::transaction::TransactionBuilder;
+    /// use zilliqa_rs::core::parse_zil;
+    /// use zilliqa_rs::signers::LocalWallet;
+    ///
+    /// let receiver = LocalWallet::create_random().unwrap();
+    /// let amount = parse_zil("0.2").unwrap();
+    ///
+    /// let tx = TransactionBuilder::default().pay(amount, receiver.address.clone()).build();
+    /// ```
     pub fn pay(mut self, amount: u128, to_addr: ZilAddress) -> Self {
         self.inner_transaction.amount = Some(amount);
         self.inner_transaction.to_addr = Some(to_addr);
         self.gas_price_if_none(parse_zil("0.002").unwrap()).gas_limit_if_none(50u64)
     }
 
+    /// Sets the chain id of the final transaction request.
     pub fn chain_id(mut self, chain_id: u16) -> Self {
         self.inner_transaction.version = Some(Version::new(chain_id));
         self
     }
 
+    /// Sets the nonce of the final transaction request.
     pub fn nonce(mut self, nonce: u64) -> Self {
         self.inner_transaction.nonce = Some(nonce);
         self
     }
 
+    /// Sets the destination of the final transaction request.
     pub fn to_address(mut self, to_addr: ZilAddress) -> Self {
         self.inner_transaction.to_addr = Some(to_addr);
         self
     }
 
+    /// Sets the amount of the final transaction request in Qa.
     pub fn amount(mut self, amount: u128) -> Self {
         self.inner_transaction.amount = Some(amount);
         self
     }
 
+    /// Sets the amount if it's none.
     pub fn amount_if_none(mut self, amount: u128) -> Self {
         if self.inner_transaction.amount.is_some() {
             return self;
@@ -120,11 +141,13 @@ impl TransactionBuilder {
         self
     }
 
+    /// Sets the gas price of the final transaction request.
     pub fn gas_price(mut self, gas_price: u128) -> Self {
         self.inner_transaction.gas_price = Some(gas_price);
         self
     }
 
+    /// Sets the gas price of the final transaction request if it's none.
     pub fn gas_price_if_none(mut self, gas_price: u128) -> Self {
         if self.inner_transaction.gas_price.is_some() {
             return self;
@@ -134,11 +157,13 @@ impl TransactionBuilder {
         self
     }
 
+    /// Sets the gas limit of the final transaction request.
     pub fn gas_limit(mut self, gas_limit: u64) -> Self {
         self.inner_transaction.gas_limit = Some(gas_limit);
         self
     }
 
+    /// Sets the gas limit of the final transaction request if it's none.
     pub fn gas_limit_if_none(mut self, gas_limit: u64) -> Self {
         if self.inner_transaction.gas_limit.is_some() {
             return self;
@@ -147,26 +172,47 @@ impl TransactionBuilder {
         self
     }
 
+    /// Sets the public key of the final transaction request.
     pub fn pub_key(mut self, pub_key: String) -> Self {
         self.inner_transaction.pub_key = Some(pub_key);
         self
     }
 
+    /// Sets the data of the final transaction request.
     pub fn data(mut self, data: String) -> Self {
         self.inner_transaction.data = Some(data);
         self
     }
 
+    /// Sets the code of the final transaction request.
     pub fn code(mut self, code: String) -> Self {
         self.inner_transaction.code = Some(code);
         self
     }
 
+    /// Sets the signature of the final transaction request.
     pub fn signature(mut self, signature: String) -> Self {
         self.inner_transaction.signature = Some(signature);
         self
     }
 
+    /// Builds a new transaction request based on the specified parameters.
+    ///
+    /// # Example
+    /// ```
+    /// use zilliqa_rs::transaction::TransactionBuilder;
+    /// use zilliqa_rs::core::parse_zil;
+    /// use zilliqa_rs::signers::LocalWallet;
+    ///
+    /// let receiver = LocalWallet::create_random().unwrap();
+    /// let tx = TransactionBuilder::default()
+    ///     .to_address(receiver.address)
+    ///     .amount(parse_zil("0.2").unwrap())
+    ///     .gas_price(2000000000u128)
+    ///     .gas_limit(50u64)
+    ///     .build();
+    /// ```
+    ///
     pub fn build(self) -> CreateTransactionRequest {
         CreateTransactionRequest {
             version: self.inner_transaction.version.unwrap_or_default(),

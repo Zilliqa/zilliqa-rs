@@ -1,6 +1,7 @@
 use crate::core::{
-    net::RPCMethod::{self, *},
+    types::RPCMethod::{self, *},
     types::*,
+    TxHash,
 };
 use async_trait::async_trait;
 use jsonrpsee::{core::params::ArrayParams, rpc_params};
@@ -8,7 +9,8 @@ use serde::de::DeserializeOwned;
 use url::Url;
 
 use crate::{
-    crypto::{Signature, ZilAddress},
+    core::ZilAddress,
+    crypto::Signature,
     middlewares::{signer::SignerMiddleware, Middleware},
     signers::Signer,
     Error,
@@ -78,15 +80,43 @@ impl<P: JsonRpcClient> Provider<P> {
         }
     }
 
+    /// Creates a new Provider with a signer.
+    /// # Example
+    /// ```
+    /// use zilliqa_rs::providers::{Http, Provider};
+    /// use zilliqa_rs::signers::LocalWallet;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> anyhow::Result<()> {
+    ///     let wallet = "dcf2cbdd171a21c480aa7f53d77f31bb102282b3ff099c78e3118b37348c72f7".parse::<LocalWallet>()?;
+    ///     let provider = Provider::<Http>::try_from("http://127.0.0.1").unwrap().with_signer(wallet);
+    ///     Ok(())
+    /// }
+    /// ```
     pub fn with_signer<S: Signer>(self, signer: S) -> SignerMiddleware<Self, S> {
         SignerMiddleware::new(self, signer)
     }
 
+    /// Creates a new Provider with the given chain id.
+    /// # Example
+    /// ```
+    /// use zilliqa_rs::providers::{Http, Provider};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> anyhow::Result<()> {
+    ///     let provider = Provider::<Http>::try_from("http://127.0.0.1:5555").unwrap().with_chain_id(1);
+    ///     Ok(())
+    /// }
+    /// ```
     pub fn with_chain_id(mut self, chain_id: u16) -> Self {
         self.chain_id = chain_id;
         self
     }
 
+    /// Sends a JSON-RPC method.
+    ///
+    /// You don't need to call this function directly.
+    /// You can call functions in [Middleware] for calling a JSON-RPC endpoint.
     pub async fn send_request<T: Send + DeserializeOwned>(&self, rpc: RPCMethod, params: ArrayParams) -> Result<T, Error> {
         self.inner.request(&rpc.to_string(), params).await
     }
@@ -138,19 +168,21 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
     }
 
     async fn create_transaction<T: DeserializeOwned + Send>(&self, tx: CreateTransactionRequest) -> Result<T, Error> {
-        if !tx.version.valid() {
+        if !tx.version.is_valid() {
             return Err(Error::InvalidVersionIsSetForTransaction(tx.version));
         }
 
         Ok(self.send_request(CreateTransaction, rpc_params![tx]).await?)
     }
 
-    async fn get_transaction(&self, tx_hash: &str) -> Result<GetTransactionResponse, Error> {
-        Ok(self.send_request(GetTransaction, rpc_params![tx_hash]).await?)
+    async fn get_transaction(&self, tx_hash: &TxHash) -> Result<GetTransactionResponse, Error> {
+        Ok(self.send_request(GetTransaction, rpc_params![tx_hash.to_string()]).await?)
     }
 
-    async fn get_transaction_status(&self, tx_hash: &str) -> Result<TransactionStatus, Error> {
-        Ok(self.send_request(GetTransactionStatus, rpc_params![tx_hash]).await?)
+    async fn get_transaction_status(&self, tx_hash: &TxHash) -> Result<TransactionStatus, Error> {
+        Ok(self
+            .send_request(GetTransactionStatus, rpc_params![tx_hash.to_string()])
+            .await?)
     }
 
     async fn get_balance(&self, address: &str) -> Result<BalanceResponse, Error> {
@@ -273,9 +305,9 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         Ok(self.send_request(GetMinimumGasPrice, rpc_params![]).await?)
     }
 
-    async fn get_contract_address_from_transaction_id(&self, tx_hash: &str) -> Result<String, Error> {
+    async fn get_contract_address_from_transaction_id(&self, tx_hash: &TxHash) -> Result<String, Error> {
         Ok(self
-            .send_request(GetContractAddressFromTransactionId, rpc_params![tx_hash])
+            .send_request(GetContractAddressFromTransactionId, rpc_params![tx_hash.to_string()])
             .await?)
     }
 

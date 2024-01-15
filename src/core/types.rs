@@ -1,15 +1,84 @@
-use std::fmt::Display;
+//! JSON-RPC related data types.
+
+use std::fmt;
 
 use primitive_types::H160;
 use prost::Message;
 use serde::{Deserialize, Serialize, Serializer};
 use serde_aux::field_attributes::deserialize_number_from_string;
 
-use crate::{
-    crypto::ZilAddress,
-    proto::{ByteArray, ProtoTransactionCoreInfo},
-    transaction::Version,
-};
+use super::{proto, TxHash, ZilAddress};
+use crate::transaction::Version;
+
+#[derive(Debug)]
+pub enum RPCMethod {
+    // Network-related methods
+    GetNetworkId,
+
+    // Blockchain-related methods
+    GetBlockchainInfo,
+    GetShardingStructure,
+    GetDsBlock,
+    GetLatestDsBlock,
+    GetNumDsBlocks,
+    GetDsBlockRate,
+    DsBlockListing,
+    GetTxBlock,
+    GetLatestTxBlock,
+    GetNumTxBlocks,
+    GetTxBlockRate,
+    TxBlockListing,
+    GetNumTransactions,
+    GetTransactionRate,
+    GetCurrentMiniEpoch,
+    GetCurrentDsEpoch,
+    GetPrevDifficulty,
+    GetPrevDsDifficulty,
+    GetTotalCoinSupply,
+    GetMinerInfo,
+
+    // Transaction-related methods
+    CreateTransaction,
+    GetTransaction,
+    GetTransactionStatus,
+    GetRecentTransactions,
+    GetTransactionsForTxBlock,
+    GetTransactionsForTxBlockEx,
+    GetTxnBodiesForTxBlock,
+    GetTxnBodiesForTxBlockEx,
+    GetNumTxnsTxEpoch,
+    GetNumTxnsDsEpoch,
+    GetMinimumGasPrice,
+
+    // Contract-related methods
+    GetContractAddressFromTransactionId,
+    GetSmartContracts,
+    GetSmartContractCode,
+    GetSmartContractInit,
+    GetSmartContractState,
+    GetSmartContractSubState,
+    GetStateProof,
+
+    // Account-related methods
+    GetBalance,
+}
+
+impl fmt::Display for RPCMethod {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::DsBlockListing => write!(f, "DSBlockListing"),
+            Self::GetNumDsBlocks => write!(f, "GetNumDSBlocks"),
+            Self::GetDsBlockRate => write!(f, "GetDSBlockRate"),
+            Self::GetCurrentDsEpoch => write!(f, "GetCurrentDSEpoch"),
+            Self::GetPrevDsDifficulty => write!(f, "GetPrevDSDifficulty"),
+            Self::GetNumTxnsDsEpoch => write!(f, "GetNumTxnsDSEpoch"),
+            Self::GetContractAddressFromTransactionId => {
+                write!(f, "GetContractAddressFromTransactionID")
+            }
+            _ => fmt::Debug::fmt(self, f),
+        }
+    }
+}
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct BalanceResponse {
@@ -37,38 +106,32 @@ pub struct CreateTransactionRequest {
 }
 
 impl CreateTransactionRequest {
-    pub fn proto_encode(&self, sender_pubkey: ByteArray) -> Vec<u8> {
+    pub fn proto_encode(&self, sender_pubkey: proto::ByteArray) -> Vec<u8> {
         let to_addr: H160 = self.to_addr.parse().unwrap();
-        let proto = ProtoTransactionCoreInfo {
+        let proto = proto::ProtoTransactionCoreInfo {
             version: self.version.pack(),
             toaddr: to_addr.as_bytes().to_vec(),
             senderpubkey: Some(sender_pubkey),
             amount: Some(self.amount.to_be_bytes().to_vec().into()),
             gasprice: Some(self.gas_price.to_be_bytes().to_vec().into()),
             gaslimit: self.gas_limit,
-            oneof2: Some(crate::proto::Nonce::Nonce(self.nonce)),
+            oneof2: Some(proto::Nonce::Nonce(self.nonce)),
             //TODO: Remove clones
-            oneof8: self
-                .code
-                .clone()
-                .map(|code| crate::proto::Code::Code(code.as_bytes().to_vec())),
-            oneof9: self
-                .data
-                .clone()
-                .map(|data| crate::proto::Data::Data(data.as_bytes().to_vec())),
+            oneof8: self.code.clone().map(|code| proto::Code::Code(code.as_bytes().to_vec())),
+            oneof9: self.data.clone().map(|data| proto::Data::Data(data.as_bytes().to_vec())),
         };
         proto.encode_to_vec()
     }
 }
 
-pub fn to_str<S: Serializer, T: Display>(data: T, serializer: S) -> Result<S::Ok, S::Error> {
+pub fn to_str<S: Serializer, T: fmt::Display>(data: T, serializer: S) -> Result<S::Ok, S::Error> {
     serializer.serialize_str(&data.to_string())
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct CreateTransactionResponse {
     #[serde(rename = "TranID")]
-    pub tran_id: String,
+    pub tran_id: TxHash,
 
     #[serde(rename = "Info")]
     pub info: String,

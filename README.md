@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 ### Provider with a signer
 To start sending transactions, we need to change the provider. The provider we had so far, didn't have a signer. That was because we didn't want to send transactions. But now we want, so we need to provide a signer for it:
 
-```rust
+```rust,ignore
     let wallet = "0xe53d1c3edaffc7a7bab5418eb836cf75819a82872b4a1a0f1c7fcf5c3e020b89"
         .parse::<LocalWallet>()?;
 
@@ -56,11 +56,11 @@ To start sending transactions, we need to change the provider. The provider we h
 Here, we create a new wallet from a private key and a provider with that signer. This provider now can be used to send transactions.
 
 Let's transfer some ZIL to a random address. First, we create a random wallet:
-```rust
+```rust,ignore
     let receiver = LocalWallet::create_random()?;
 ```
 Then we need to compose a transaction. `TransactionBuilder` is used to build a transaction:
-```rust
+```rust,ignore
     let tx = TransactionBuilder::default()
         .to_address(receiver.address.clone())
         .amount(parse_zil("2.0")?)
@@ -69,13 +69,13 @@ Then we need to compose a transaction. `TransactionBuilder` is used to build a t
         .build();
 ```
 Here we are going to transfer 2.0 ZIL to the receiver. Now we need to send the transaction:
-```rust
+```rust,ignore
     provider
         .send_transaction_without_confirm::<CreateTransactionResponse>(tx)
         .await?;
 ```
 Now, let's check the balance:
-```rust
+```rust,ignore
     let balance = provider.get_balance(&receiver.address).await;
     println!("{balance:?}");
 ```
@@ -87,7 +87,7 @@ Ok(BalanceResponse { nonce: 0, balance: 2000000000000 })
 ```
 ### Using pay function
 TransactionBuilder has an auxiliary function named `pay` to simplify payment transaction creation:
-```rust
+```rust,ignore
     let tx = TransactionBuilder::default().pay(amount, receiver.address.clone()).build();
 ```
 
@@ -106,7 +106,7 @@ setting `relative` to `true` is crucial. Otherwise, your scilla contracts won't 
 
 The generated code is something like this:
 
-```rust
+```rust,ignore
 impl<T: Middleware> HelloWorld<T> {
     pub async fn deploy(client: Arc<T> , owner: ZilAddress) -> Result<Self, Error> {
     }
@@ -136,7 +136,7 @@ impl<T: Middleware> HelloWorld<T> {
 
 ### Contract Deployment
 Now it's time to deploy the contract:
-```rust
+```rust,ignore
     let contract = HelloWorld::deploy(provider.into(), wallet.address).await?;
     println!("Contract address: {:?}", contract.address());
 ```
@@ -153,7 +153,7 @@ Contract address: ZilAddress("0xC50C93831F6eAB4e4F011076dca6e887288cc872")
 
 ### Getting contract states
 Our contract has `owner`, an immutable state, and `welcome_msg`, a mutable one. We can get these states by calling the corresponding functions:
-```rust
+```rust,ignore
     println!("Contract owner: {:?}", contract.owner().await?);
     println!("Welcome msg: {}", contract.welcome_msg().await?);
 ```
@@ -161,16 +161,16 @@ Our contract has `owner`, an immutable state, and `welcome_msg`, a mutable one. 
 ### Calling a transition
 Our contract has a `setHello` transition. Calling this transition is not harder than calling a rust function:
 
-```rust
+```rust,ignore
     contract.set_hello("Salaam".to_string()).call().await?;
 ```
 Pay attention, here we need to call `call` too. That's because everything you do before `call` is like configuring the transition call. For example, you can set the amount of ZIL you want to pass to a transition before calling `call` function:
-```rust
+```rust,ignore
     contract.transfer(receiver).amount(parse_zil("0.1")).call().await?;
 ```
 
 OK, now if you get and print `welcome_msg` it should have the new value:
-```rust
+```rust,ignore
     println!("Welcome msg: {}", contract.welcome_msg().await?);
 ```
 The final main:
@@ -184,7 +184,7 @@ use zilliqa_rs::{
     providers::{Http, Provider},
     signers::LocalWallet,
     transaction::TransactionBuilder,
-    util::parse_zil,
+    core::parse_zil,
 };
 
 #[tokio::main]

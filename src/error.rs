@@ -1,3 +1,5 @@
+//! Different error variations that are possible in zilliqa-rs
+
 use std::num::ParseIntError;
 
 use thiserror::Error as ThisError;
@@ -62,9 +64,6 @@ pub enum Error {
 
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
-
-    #[error(transparent)]
-    Secp256k1Error(#[from] secp256k1::Error),
 
     #[error(transparent)]
     Bech32Error(#[from] bech32::Error),

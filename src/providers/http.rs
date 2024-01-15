@@ -10,12 +10,14 @@ use crate::Error;
 
 use super::JsonRpcClient;
 
+/// HTTP Provider
 #[derive(Debug)]
 pub struct Http {
     client: HttpClient,
 }
 
 impl Http {
+    /// Creates a new HTTP provider.
     pub fn new(url: impl Into<Url>) -> Result<Self, Error> {
         Ok(Self {
             client: HttpClientBuilder::default().build(url.into())?,

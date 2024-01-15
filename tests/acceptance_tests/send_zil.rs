@@ -1,6 +1,6 @@
 use crate::common::TestContext;
 use test_context::test_context;
-use zilliqa_rs::{contract, middlewares::Middleware, signers::LocalWallet, util::parse_zil};
+use zilliqa_rs::{contract, core::parse_zil, middlewares::Middleware, signers::LocalWallet};
 
 #[test_context(TestContext)]
 #[tokio::test]

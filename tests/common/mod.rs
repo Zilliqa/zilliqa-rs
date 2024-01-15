@@ -1,4 +1,4 @@
-use std::{env, sync::Arc};
+use std::{env, str::FromStr, sync::Arc};
 
 use test_context::AsyncTestContext;
 use url::Url;
@@ -17,7 +17,7 @@ impl AsyncTestContext for TestContext {
             .unwrap_or("http://localhost:5555".into())
             .parse()
             .unwrap();
-        let wallet = LocalWallet::new(
+        let wallet = LocalWallet::from_str(
             &env::var("TEST_WALLET").unwrap_or("e53d1c3edaffc7a7bab5418eb836cf75819a82872b4a1a0f1c7fcf5c3e020b89".to_string()),
         )
         .unwrap();

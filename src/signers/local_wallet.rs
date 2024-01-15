@@ -3,54 +3,35 @@ use std::str::FromStr;
 use k256::ecdsa::Signature;
 
 use crate::{
-    crypto::{generate_private_key, schnorr::sign, PrivateKey, PublicKey, ZilAddress},
+    core::{PrivateKey, PublicKey, ZilAddress},
+    crypto::schnorr::sign,
     Error,
 };
 
 use super::Signer;
 
 /// Represents a local wallet, containing a private key, address, and public key.
-///
-/// Properties:
-///
-/// * `private_key`: The `private_key` property is of type `PrivateKey` and represents the private key
-/// of the wallet. It is used for signing transactions and proving ownership of the wallet.
-/// * `address`: The `address` property is of type `ZilAddress` and represents the address of the
-/// wallet. It is a public identifier that is used to receive funds or interact with the Zilliqa
-/// blockchain.
-/// * `public_key`: The `public_key` property is a public key associated with the `LocalWallet`. It is
-/// used for cryptographic operations and can be shared with others.
 #[derive(Debug, Clone, PartialEq)]
 pub struct LocalWallet {
+    /// Private key of the wallet.
     pub private_key: PrivateKey,
+    /// Public address of the wallet which is used to receive ZIL.
     pub address: ZilAddress,
+    /// Public key of the wallet.
     public_key: PublicKey,
 }
 
 impl LocalWallet {
-    /// The function takes a private key as input, parses it into a `PrivateKey` object, converts it into a
-    /// `ZilAddress`, and returns a new instance of the struct containing the address, public key, and
-    /// private key.
-    ///
-    /// Arguments:
-    ///
-    /// * `private_key`: A string representing the private key.
-    pub fn new(private_key: &str) -> Result<Self, Error> {
-        let private_key = private_key.parse::<PrivateKey>()?;
-        let address = ZilAddress::try_from(&private_key.public_key())?;
-
-        Ok(Self {
-            address,
-            public_key: private_key.public_key(),
-            private_key,
-        })
-    }
-
-    /// The function `create_random` generates a random private key and creates a new instance of a struct
+    /// Generates a random private key and creates a new instance of a LocalWallet
     /// using that key.
+    ///
+    /// # Example
+    /// ```
+    /// use zilliqa_rs::signers::LocalWallet;
+    /// let wallet = LocalWallet::create_random().unwrap();
+    /// ```
     pub fn create_random() -> Result<Self, Error> {
-        let private_key = generate_private_key();
-        Self::new(&private_key)
+        PrivateKey::create_random().try_into()
     }
 }
 
@@ -71,12 +52,33 @@ impl Signer for LocalWallet {
 impl FromStr for LocalWallet {
     type Err = Error;
 
-    /// This function create a new LocalWallet out of a string slice.
-    /// Arguments:
-    ///
-    /// * `private_key`: A string representing the private key.
+    /// Create a new LocalWallet out of a string slice containing a private key.
     fn from_str(private_key: &str) -> Result<Self, Self::Err> {
-        Self::new(private_key)
+        private_key.parse::<PrivateKey>()?.try_into()
+    }
+}
+
+impl TryFrom<PrivateKey> for LocalWallet {
+    type Error = Error;
+
+    /// Converts a private key to a LocalWallet.
+    ///
+    /// # Example
+    /// ```
+    /// use zilliqa_rs::signers::LocalWallet;
+    /// use zilliqa_rs::core::PrivateKey;
+    ///
+    /// let private_key = PrivateKey::create_random();
+    /// let wallet = LocalWallet::try_from(private_key).unwrap();
+    /// ```
+    fn try_from(private_key: PrivateKey) -> Result<Self, Error> {
+        let address = ZilAddress::try_from(&private_key.public_key())?;
+
+        Ok(Self {
+            address,
+            public_key: private_key.public_key(),
+            private_key,
+        })
     }
 }
 
@@ -84,10 +86,7 @@ impl FromStr for LocalWallet {
 mod tests {
     use claim::assert_some;
 
-    use crate::{
-        crypto::{schnorr::verify, ZilAddress},
-        signers::Signer,
-    };
+    use crate::{core::ZilAddress, crypto::schnorr::verify, signers::Signer};
 
     use super::LocalWallet;
 
@@ -104,7 +103,9 @@ mod tests {
 
     #[test]
     fn a_valid_private_key_should_results_a_valid_account_with_new() {
-        let account = LocalWallet::new("0xD96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba").unwrap();
+        let account: LocalWallet = "0xD96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba"
+            .parse()
+            .unwrap();
         assert_eq!(
             account.address(),
             &"0x381f4008505e940AD7681EC3468a719060caF796".parse::<ZilAddress>().unwrap()
@@ -113,7 +114,9 @@ mod tests {
 
     #[test]
     fn sign_should_return_signature() {
-        let account = LocalWallet::new("0xD96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba").unwrap();
+        let account: LocalWallet = "0xD96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba"
+            .parse()
+            .unwrap();
 
         let signature = account.sign(&hex::decode("11223344aabb").unwrap());
         println!("{} {}", signature.r().to_string(), signature.s().to_string());

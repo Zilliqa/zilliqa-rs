@@ -1,11 +1,10 @@
 use std::sync::Arc;
 
 use crate::{
-    core::GetTransactionResponse,
-    crypto::ZilAddress,
+    core::parse_zil,
+    core::{GetTransactionResponse, ZilAddress},
     middlewares::Middleware,
     transaction::{TransactionBuilder, TransactionParams},
-    util::parse_zil,
     Error,
 };
 

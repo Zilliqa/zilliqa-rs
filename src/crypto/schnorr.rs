@@ -1,4 +1,5 @@
-use super::{PrivateKey, PublicKey, Signature};
+use super::Signature;
+use crate::core::{PrivateKey, PublicKey};
 use k256::{
     elliptic_curve::{ops::Reduce, sec1::ToEncodedPoint, Group},
     AffinePoint, Scalar, U256,
@@ -76,7 +77,7 @@ pub fn verify(message: &[u8], public_key: &PublicKey, signature: &Signature) -> 
 mod tests {
     use k256::{elliptic_curve::PrimeField, FieldBytes, Scalar};
 
-    use crate::crypto::{PrivateKey, PublicKey};
+    use crate::core::{PrivateKey, PublicKey};
 
     use super::verify;
 
