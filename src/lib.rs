@@ -1,5 +1,5 @@
 /*!
-This crate provides routines for interacting with [Zilliqa] network.
+This crate provides routines for interacting with the [Zilliqa] network.
 Sending [JSON-RPC requests], sending transactions, deploying [scilla contracts],
 and interacting with them is easily possible using this crate.
 

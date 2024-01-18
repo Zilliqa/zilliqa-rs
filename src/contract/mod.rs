@@ -12,21 +12,39 @@ If it has a parameter of an address, you must pass an address to this function.
 And this means all of the beauties of type-checking of rust come to working with scilla contracts.
 
 # Generating rust code from scilla contracts
+
 We want to deploy a simple contract named [HelloWorld] and call its `setHello` transition.
-First, we need to create a folder next to `src`. Let's call it `contracts`.
-Then we move HelloWorld.scilla to this folder.
-To let zilliqa-rs scilla-to-rust code generation know about the contracts path,
-we need to export `CONTRACTS_PATH` environment variable.
-The simplest way is to create `.cargo/config.toml` file and change it like:
+
+First, we need to create a folder next to `src`. Let's call it
+`contracts`. Then we move [HelloWorld.scilla] to this folder.
+
+To let zilliqa-rs scilla-to-rust code generation know about the
+contracts path, we need to export the `CONTRACTS_PATH` environment
+variable.
+
+The simplest way is to create a `.cargo/config.toml` file
+and change it like:
 
 ```toml
 [env]
 CONTRACTS_PATH = {value = "contracts", relative = true}
 ```
-setting `relative` to **`true`** is crucial.
-Otherwise, your scilla contracts won't be transpiled to rust. Now, if you build the project using `cargo build`,
-your [HelloWorld] contract gets converted to rust under the hood.
-The generated code is something like this:
+
+setting `relative` to **`true`** is crucial - this tells cargo that
+the `contracts` directory is relative to the crate directory.
+
+If you now build your project with `cargo build`, the `build.rs` in
+this package will parse any contracts in the `CONTRACTS_PATH` and
+generate a corresponding rust struct whose implementation will allow
+you to deploy or call those contracts.
+
+We generate three things for each contract:
+
+ * `<contract>State` - a struct to represent the state of a contract.
+ * `<contract>Init` - a struct to represent the initialisation parameters of a contract.
+ * `<contract>` - an implementation which allows you to deploy, query, or call the contract.
+
+The generated code for [HelloWorld.scilla] is something like this:
 
 ```rust,ignore
 impl<T: Middleware> HelloWorld<T> {
@@ -49,12 +67,21 @@ impl<T: Middleware> HelloWorld<T> {
     }
 }
 ```
-* The `deploy` deploys the contract to the network. Because HelloWorld.scilla contract accepts an address, `owner`, as a deployment parameter, the `deploy` function needs that too. It means you can't deploy it without providing a valid address.
+* The `deploy` function deploys the contract to the network. Because [HelloWorld.scilla] accepts an address, `owner`, as a deployment parameter, the `deploy` function needs that too.
 * The `address` function returns the address of the deployed contract.
 * `set_hello` corresponds to `setHello` transition in the contract. Again, because the transition accepts a string parameter, the `set_hello` function does too.
 * `get_hello` corresponds to the `getHello` transition.
 * The contract has a field named, `welcome_msg`, to get the value of this field, the `welcome_msg` function should be called.
 * The contract has an immutable state named, `owner` and we passed the value during deployment. To get the value of the owner, we need to call `owner`
+
+All contracts will have the functions:
+
+* `deploy` - to deploy the contract.
+* `address` - to retrieve the contract's address once deployed.
+* `new` - to create an instance of the contract object for deployment.
+* `get_state` - to retrieve the contract state (modelled as a `..State` struct).
+
+For details, you can run `cargo doc` and then look at the generated documentation.
 
 # Deploying the contract
 
@@ -90,6 +117,7 @@ functions to deploy a contract manually.
 # Calling a transition
 
 The [HelloWorld] contract has a `setHello` transition. It can be called in rust like:
+
  ```
  use std::sync::Arc;
 
@@ -121,7 +149,7 @@ The [HelloWorld] contract has a `setHello` transition. It can be called in rust 
 ## Calling a transaction with custom parameters for nonce, amount, etc.
 
 It's possible to override default transaction parameters such as nonce and amount. Here we call `accept_zil` transition of
-[SendZil] contract:
+`SendZil` contract:
 
  ```
  use zilliqa_rs::{contract, middlewares::Middleware, core::parse_zil, signers::LocalWallet, providers::{Http, Provider}};
@@ -149,7 +177,9 @@ It's possible to override default transaction parameters such as nonce and amoun
  You need to call [BaseContract::call] and provide needed parameters for the transition.
 
 ## Getting the contract's state
-[HelloWorld] contract has a `welcome_msg` field.
+
+The [HelloWorld] contract has a `welcome_msg` field.
+
 You can get the latest value of this field by calling `welcome_msg` function:
 
 ```rust
@@ -180,8 +210,10 @@ async fn main() -> anyhow::Result<()> {
     assert_eq!(hello, "Salaam".to_string());
     Ok(())
 }
+```
 
 [HelloWorld]: https://github.com/Zilliqa/zilliqa-rs/blob/master/tests/contracts/HelloWorld.scilla
+[HelloWorld.scilla]: https://github.com/Zilliqa/zilliqa-rs/blob/master/tests/contracts/HelloWorld.scilla
 [SendZil]: https://github.com/Zilliqa/zilliqa-rs/blob/master/tests/contracts/SendZil.scilla
 */
 
