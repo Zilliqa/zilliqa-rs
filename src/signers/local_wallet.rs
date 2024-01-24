@@ -1,5 +1,6 @@
-use std::str::FromStr;
+use std::{path::Path, str::FromStr};
 
+use eth_keystore::{decrypt_key, encrypt_key};
 use k256::ecdsa::Signature;
 
 use crate::{
@@ -32,6 +33,43 @@ impl LocalWallet {
     /// ```
     pub fn create_random() -> Result<Self, Error> {
         PrivateKey::create_random().try_into()
+    }
+
+    /// Loads a wallet from a keystore file.
+    ///
+    /// # Example
+    /// ```
+    /// use zilliqa_rs::signers::LocalWallet;
+    /// use std::path::Path;
+    /// let wallet = LocalWallet::load_keystore(&Path::new("./tests/keystore.json"), "zxcvbnm,").unwrap();
+    /// ```
+    pub fn load_keystore(path: &Path, password: &str) -> Result<Self, Error> {
+        PrivateKey::from_slice(&decrypt_key(path, password).unwrap())?.try_into()
+    }
+
+    /// Encrypts the given wallet using the Scrypt password-based key derivation function, and stores it in the provided path. On success, it returns the id (Uuid) generated for this keystore.
+    ///
+    /// # Example
+    /// ```
+    /// use zilliqa_rs::signers::LocalWallet;
+    /// use std::path::Path;
+    /// use std::env;
+    ///
+    /// let wallet = LocalWallet::create_random().unwrap();
+    /// let path = env::temp_dir().join("test_keystore.json");
+    /// let filename = wallet.save_keystore(&path, "zxcvbnm,").unwrap();
+    /// ```
+    pub fn save_keystore(&self, path: &Path, password: &str) -> Result<String, Error> {
+        let mut rng = rand::thread_rng();
+        if path.is_dir() {
+            return Err(Error::IsADirectory);
+        }
+
+        let (dir, filename) = (
+            path.parent().ok_or(Error::FailedToGetTheParentDirectory)?,
+            path.file_name().map(|filename| filename.to_str().unwrap()),
+        );
+        Ok(encrypt_key(dir, &mut rng, self.private_key.to_bytes(), password, filename)?)
     }
 }
 
@@ -84,6 +122,8 @@ impl TryFrom<PrivateKey> for LocalWallet {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
+
     use claim::assert_some;
 
     use crate::{core::ZilAddress, crypto::schnorr::verify, signers::Signer};
@@ -126,5 +166,16 @@ mod tests {
             &account.public_key(),
             &signature
         ));
+    }
+
+    #[test]
+    fn save_and_load_keystore_should_work_fine() {
+        let wallet = LocalWallet::create_random().unwrap();
+        let path = env::temp_dir().join("keystore.json");
+        let password = "qwerty";
+        wallet.save_keystore(&path, password).unwrap();
+
+        let wallet2 = LocalWallet::load_keystore(&path, password).unwrap();
+        assert_eq!(wallet.address, wallet2.address);
     }
 }

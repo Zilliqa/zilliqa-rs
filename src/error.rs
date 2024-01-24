@@ -53,6 +53,12 @@ pub enum Error {
     #[error("Failed to parse {0}.")]
     FailedToParseContractField(String),
 
+    #[error("A directory was specified when a file was expected.")]
+    IsADirectory,
+
+    #[error("Failed to get the parent directory of the given path")]
+    FailedToGetTheParentDirectory,
+
     #[error(transparent)]
     JsonRpcError(#[from] jsonrpsee::core::ClientError),
 
@@ -76,4 +82,7 @@ pub enum Error {
 
     #[error(transparent)]
     ParseIntError(#[from] ParseIntError),
+
+    #[error(transparent)]
+    KeystoreError(#[from] eth_keystore::KeystoreError),
 }

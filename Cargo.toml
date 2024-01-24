@@ -20,6 +20,7 @@ scilla-parser = "1.0.0"
 anyhow = "1.0.75"
 async-trait = "0.1.74"
 bech32 = "0.9.1"
+eth-keystore = "0.5.0"
 hex = "0.4.3"
 jsonrpsee = { version = "0.21.0", features = ["http-client", "macros"] }
 k256 = "0.13.2"
