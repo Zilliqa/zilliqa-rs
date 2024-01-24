@@ -160,6 +160,17 @@ async fn deploy_a_paramless_contract_through_the_rust_binding(ctx: &TestContext)
 
 #[test_context(TestContext)]
 #[tokio::test]
+async fn load_a_contract_from_an_address(ctx: &TestContext) -> Result<()> {
+    let provider = ctx.provider();
+    let contract = contract::HelloWorld::deploy(provider.clone(), ctx.wallet.address.clone()).await?;
+    let contract2 = contract::HelloWorld::attach(contract.address().clone(), provider);
+    let hello = contract2.welcome_msg().await?;
+    assert_eq!(hello, "Hello world!".to_string());
+    Ok(())
+}
+
+#[test_context(TestContext)]
+#[tokio::test]
 async fn deploy_a_one_param_contract_through_the_rust_binding(ctx: &TestContext) -> Result<()> {
     let provider = ctx.provider();
     // TODO: ZilAddress clone can be removed
@@ -170,7 +181,7 @@ async fn deploy_a_one_param_contract_through_the_rust_binding(ctx: &TestContext)
     println!("{response:?}");
 
     let hello = contract.welcome_msg().await?;
-    assert_eq!(hello, "Hello world".to_string());
+    assert_eq!(hello, "Hello world!".to_string());
 
     Ok(())
 }

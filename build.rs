@@ -190,6 +190,10 @@ pub struct {contract_name}<T: Middleware> {{
 }}
 
 impl<T: Middleware> {contract_name}<T> {{
+    pub fn attach(address: ZilAddress, client: Arc<T>) -> Self {{
+        Self::new(BaseContract::new(address, client))
+    }}
+
     pub async fn deploy(client: Arc<T> {contract_deployment_params}) -> Result<Self, Error> {{
         let factory = ContractFactory::new(client.clone());
         let init = Init(vec![
