@@ -33,11 +33,6 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
         self.inner().chainid()
     }
 
-    /// The `deploy_contract` function deploys a contract by sending a transaction without confirmation and
-    async fn deploy_contract(&self, tx: CreateTransactionRequest) -> Result<DeployContractResponse, Error> {
-        self.send_transaction_without_confirm::<DeployContractResponse>(tx).await
-    }
-
     /// Sends a transaction and returns a more higher-level response to work with on application layer.
     async fn send_transaction(&self, tx: CreateTransactionRequest) -> Result<Transaction<Self::Provider>, Error> {
         let response = self.send_transaction_without_confirm::<CreateTransactionResponse>(tx).await?;
