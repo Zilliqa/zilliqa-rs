@@ -79,6 +79,7 @@ impl<'a, T: JsonRpcClient> Transaction<'a, T> {
         for _ in 0..max_attempt {
             let res = match self.client.get_transaction(&self.id).await {
                 Ok(res) => res,
+                // TODO: Consider errors except tx hash not found.
                 Err(_) => {
                     tokio::time::sleep(interval).await;
                     continue;

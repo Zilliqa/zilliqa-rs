@@ -1,4 +1,5 @@
 use crate::{
+    contract::ScillaVariable,
     core::{types::*, TxHash, ZilAddress},
     crypto::Signature,
     providers::{JsonRpcClient, Provider},
@@ -204,7 +205,7 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
         self.inner().get_smart_contract_code(contract_address).await
     }
 
-    async fn get_smart_contract_init(&self, contract_address: &ZilAddress) -> Result<Vec<EventParam>, Error> {
+    async fn get_smart_contract_init(&self, contract_address: &ZilAddress) -> Result<Vec<ScillaVariable>, Error> {
         self.inner().get_smart_contract_init(contract_address).await
     }
 

@@ -4,11 +4,11 @@ use std::fmt;
 
 use primitive_types::H160;
 use prost::Message;
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serializer};
 use serde_aux::field_attributes::deserialize_number_from_string;
 
 use super::{proto, TxHash, ZilAddress};
-use crate::transaction::Version;
+use crate::{contract::ScillaVariable, transaction::Version};
 
 #[derive(Debug)]
 pub enum RPCMethod {
@@ -397,34 +397,7 @@ pub struct StatusID {
 pub struct EventLogEntry {
     pub address: String,
     pub _eventname: String,
-    pub params: Vec<EventParam>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct EventParam {
-    pub vname: String,
-
-    #[serde(rename = "type")]
-    pub r#type: String,
-    pub value: String,
-}
-
-impl EventParam {
-    pub fn new<T: ToString>(vname: String, r#type: String, value: T) -> Self {
-        Self {
-            vname,
-            value: value.to_string(),
-            r#type,
-        }
-    }
-
-    pub fn new_from_str(vname: &str, r#type: &str, value: &str) -> Self {
-        Self {
-            vname: vname.to_string(),
-            value: value.to_string(),
-            r#type: r#type.to_string(),
-        }
-    }
+    pub params: Vec<ScillaVariable>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -446,7 +419,7 @@ pub struct TransitionMsg {
     pub _amount: String,
     pub _recipient: String,
     pub _tag: String,
-    pub params: Vec<EventParam>,
+    pub params: Vec<ScillaVariable>,
 }
 
 #[derive(Deserialize, Debug, Clone)]

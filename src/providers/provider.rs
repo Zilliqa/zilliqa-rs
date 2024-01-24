@@ -1,7 +1,10 @@
-use crate::core::{
-    types::RPCMethod::{self, *},
-    types::*,
-    TxHash,
+use crate::{
+    contract::ScillaVariable,
+    core::{
+        types::RPCMethod::{self, *},
+        types::*,
+        TxHash,
+    },
 };
 use async_trait::async_trait;
 use jsonrpsee::{core::params::ArrayParams, rpc_params};
@@ -319,7 +322,7 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         Ok(self.send_request(GetSmartContractCode, rpc_params![contract_address]).await?)
     }
 
-    async fn get_smart_contract_init(&self, contract_address: &ZilAddress) -> Result<Vec<EventParam>, Error> {
+    async fn get_smart_contract_init(&self, contract_address: &ZilAddress) -> Result<Vec<ScillaVariable>, Error> {
         Ok(self.send_request(GetSmartContractInit, rpc_params![contract_address]).await?)
     }
 

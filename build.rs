@@ -87,7 +87,8 @@ fn get_contract_init_fields_getters(init_params: &FieldList) -> String {
             .iter()
             .find(|value| value.vname == "{field_name}").ok_or(Error::NoSuchFieldInContractInit("{field_name}".to_string()))?
             .value
-            .parse().map_err(|_| Error::FailedToParseContractField("{field_name}".to_string()))
+            .clone()
+            .try_into_rust_type()
     }}"#,
             )
         })
