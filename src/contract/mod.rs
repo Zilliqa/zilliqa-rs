@@ -228,7 +228,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 pub use transition_call::*;
 
-use crate::core::{EventParam, GetTransactionResponse, ZilAddress};
+use crate::core::{GetTransactionResponse, ZilAddress};
 use crate::signers::Signer;
 use crate::{middlewares::Middleware, transaction::TransactionParams, Error};
 
@@ -311,7 +311,7 @@ impl<T: Middleware> BaseContract<T> {
     }
 
     /// The function `get_init` retrieves the initialization parameters of a smart contract.
-    pub async fn get_init(&self) -> Result<Vec<EventParam>, Error> {
+    pub async fn get_init(&self) -> Result<Vec<ScillaVariable>, Error> {
         self.client.get_smart_contract_init(&self.address).await
     }
 

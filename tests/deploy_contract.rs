@@ -7,6 +7,7 @@ use test_context::test_context;
 use anyhow::Result;
 use zilliqa_rs::{
     contract::{self, ContractFactory, Init, ScillaVariable},
+    core::BNum,
     providers::Provider,
     signers::LocalWallet,
 };
@@ -154,7 +155,10 @@ async fn call_a_param_less_transition_though_the_rust_binding(ctx: &TestContext)
 #[tokio::test]
 async fn deploy_a_paramless_contract_through_the_rust_binding(ctx: &TestContext) -> Result<()> {
     let provider = ctx.provider();
-    let _contract = contract::Timestamp::deploy(provider).await?;
+    let contract = contract::Timestamp::deploy(provider).await?;
+    let bnum = "123".parse::<BNum>()?;
+    contract.event_timestamp(bnum).call().await?;
+
     Ok(())
 }
 

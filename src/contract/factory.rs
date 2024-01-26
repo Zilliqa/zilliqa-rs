@@ -2,9 +2,9 @@ use std::{path::Path, sync::Arc};
 
 use crate::{
     core::parse_zil,
-    core::ZilAddress,
+    core::{DeployContractResponse, ZilAddress},
     middlewares::Middleware,
-    transaction::{TransactionBuilder, TransactionParams},
+    transaction::{Transaction, TransactionBuilder, TransactionParams},
     Error,
 };
 
@@ -131,7 +131,9 @@ impl<T: Middleware> Factory<T> {
             .gas_limit_if_none(10000u64)
             .build();
 
-        let response = self.client.deploy_contract(tx).await?;
+        let response: DeployContractResponse = self.client.send_transaction_without_confirm(tx).await?;
+        let transaction = Transaction::new(response.response.tran_id, self.client.provider());
+        transaction.confirm().await?;
         Ok(BaseContract {
             address: response.contract_address,
             client: self.client.clone(),

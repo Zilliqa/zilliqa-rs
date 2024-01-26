@@ -1,4 +1,5 @@
 use crate::{
+    contract::ScillaVariable,
     core::{types::*, TxHash, ZilAddress},
     crypto::Signature,
     providers::{JsonRpcClient, Provider},
@@ -31,11 +32,6 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
     /// The `chainid` function returns the chain ID.
     fn chainid(&self) -> u16 {
         self.inner().chainid()
-    }
-
-    /// The `deploy_contract` function deploys a contract by sending a transaction without confirmation and
-    async fn deploy_contract(&self, tx: CreateTransactionRequest) -> Result<DeployContractResponse, Error> {
-        self.send_transaction_without_confirm::<DeployContractResponse>(tx).await
     }
 
     /// Sends a transaction and returns a more higher-level response to work with on application layer.
@@ -209,7 +205,7 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
         self.inner().get_smart_contract_code(contract_address).await
     }
 
-    async fn get_smart_contract_init(&self, contract_address: &ZilAddress) -> Result<Vec<EventParam>, Error> {
+    async fn get_smart_contract_init(&self, contract_address: &ZilAddress) -> Result<Vec<ScillaVariable>, Error> {
         self.inner().get_smart_contract_init(contract_address).await
     }
 
