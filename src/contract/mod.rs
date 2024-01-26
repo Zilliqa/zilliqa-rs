@@ -111,6 +111,36 @@ async fn main() -> anyhow::Result<()> {
 }
 ```
 
+Alternatively, If the contract is already deployed and you have its address, it's possible to create a new instance of the target contract by calling `attach` function:
+```
+use std::sync::Arc;
+
+use zilliqa_rs::{
+    contract,
+    providers::{Http, Provider},
+    signers::LocalWallet,
+};
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    const END_POINT: &str = "http://localhost:5555";
+
+    let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
+
+    let provider = Arc::new(Provider::<Http>::try_from(END_POINT)?
+        .with_chain_id(222)
+        .with_signer(wallet.clone()));
+
+    let contract = contract::HelloWorld::deploy(provider.clone(), wallet.address.clone()).await?;
+
+    // Create a new instance by using the address of a deployed contract.
+    let contract2 = contract::HelloWorld::attach(contract.address().clone(), provider.clone());
+
+    Ok(())
+}
+```
+In the above code, we first deploy [HelloWorld] as before, then we use its address to create a new instance of [HelloWorld].
+
 Instead of using rust binding, it's possible to use [ContractFactory::deploy_from_file] or [ContractFactory::deploy_str]
 functions to deploy a contract manually.
 
