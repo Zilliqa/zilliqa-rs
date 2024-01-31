@@ -111,6 +111,11 @@ impl PrivateKey {
         Self(k256::SecretKey::random(&mut rand::thread_rng()))
     }
 
+    /// Constructs a private key from a raw secret key.
+    pub fn from_slice(slice: &[u8]) -> Result<Self, Error> {
+        Ok(Self(k256::SecretKey::from_slice(slice)?))
+    }
+
     /// Returns corresponding public key of the private key
     pub fn public_key(&self) -> PublicKey {
         PublicKey::new(self.0.public_key())
