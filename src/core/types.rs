@@ -16,9 +16,11 @@ pub enum RPCMethod {
     GetNetworkId,
 
     // Blockchain-related methods
+    GetNodeType,
     GetBlockchainInfo,
     GetShardingStructure,
     GetDsBlock,
+    GetDsBlockVerbose,
     GetLatestDsBlock,
     GetNumDsBlocks,
     GetDsBlockRate,
@@ -36,10 +38,12 @@ pub enum RPCMethod {
     GetPrevDsDifficulty,
     GetTotalCoinSupply,
     GetMinerInfo,
+    GetNumPeers,
 
     // Transaction-related methods
     CreateTransaction,
     GetTransaction,
+    GetSoftConfirmedTransaction,
     GetTransactionStatus,
     GetRecentTransactions,
     GetTransactionsForTxBlock,
@@ -216,6 +220,57 @@ pub struct DsBlockHeader {
 pub struct DsBlock {
     pub header: DsBlockHeader,
     pub signature: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct DsBlockHeaderVerbose {
+    #[serde(flatten)]
+    pub header: DsBlockHeader,
+    #[serde(rename = "CommitteeHash")]
+    pub committee_hash: String,
+    #[serde(rename = "EpochNum")]
+    pub epoch_num: String,
+    #[serde(rename = "MembersEjected")]
+    pub members_ejected: Vec<String>,
+    #[serde(rename = "PoWWinnersIP")]
+    pub pow_winners_ip: Vec<PoWWinnersIP>,
+    #[serde(rename = "ReservedField")]
+    pub reserved_field: String,
+    #[serde(rename = "SWInfo")]
+    pub sw_info: SWInfo,
+    #[serde(rename = "Version")]
+    pub version: u16,
+    #[serde(rename = "ShardingHash")]
+    pub sharding_hash: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct SWInfo {
+    #[serde(rename = "Scilla")]
+    pub scilla: (u16, u16, u16, String, u16),
+    #[serde(rename = "Zilliqa")]
+    pub zilliqa: (u16, u16, u16, String, u16),
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct DsBlockVerbose {
+    pub header: DsBlockHeaderVerbose,
+    pub signature: String,
+    #[serde(rename = "B1")]
+    pub b1: Vec<bool>,
+    #[serde(rename = "B2")]
+    pub b2: Vec<bool>,
+    #[serde(rename = "CS1")]
+    pub cs1: String,
+    #[serde(rename = "PrevDSHash")]
+    pub prev_ds_hash: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct PoWWinnersIP {
+    #[serde(rename = "IP")]
+    pub ip: String,
+    pub port: u16,
 }
 
 #[derive(Deserialize, Debug, Clone)]

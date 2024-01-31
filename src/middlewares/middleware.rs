@@ -80,12 +80,20 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
         self.inner().get_transaction(tx_hash).await
     }
 
+    async fn get_soft_confirmed_transaction(&self, tx_hash: &TxHash) -> Result<GetTransactionResponse, Error> {
+        self.inner().get_soft_confirmed_transaction(tx_hash).await
+    }
+
     async fn get_balance(&self, address: &str) -> Result<BalanceResponse, Error> {
         self.inner().get_balance(address).await
     }
 
     async fn get_ds_block(&self, lock_num: &str) -> Result<DsBlock, Error> {
         self.inner().get_ds_block(lock_num).await
+    }
+
+    async fn get_ds_block_verbose(&self, lock_num: &str) -> Result<DsBlockVerbose, Error> {
+        self.inner().get_ds_block_verbose(lock_num).await
     }
 
     async fn ds_block_listing(&self, max: u32) -> Result<BlockList, Error> {
@@ -103,6 +111,10 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
 
     async fn get_blockchain_info(&self) -> Result<BlockchainInfo, Error> {
         self.inner().get_blockchain_info().await
+    }
+
+    async fn get_node_type(&self) -> Result<String, Error> {
+        self.inner().get_node_type().await
     }
 
     async fn get_sharding_structure(&self) -> Result<ShardingStructure, Error> {
@@ -151,6 +163,10 @@ pub trait Middleware: Sync + Send + std::fmt::Debug {
 
     async fn get_prev_difficulty(&self) -> Result<u32, Error> {
         self.inner().get_prev_difficulty().await
+    }
+
+    async fn get_num_peers(&self) -> Result<u32, Error> {
+        self.inner().get_num_peers().await
     }
 
     async fn get_prev_ds_difficulty(&self) -> Result<u32, Error> {
