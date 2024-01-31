@@ -19,6 +19,7 @@ pub enum RPCMethod {
     GetNodeType,
     GetBlockchainInfo,
     GetShardingStructure,
+    GetCurrentDsComm,
     GetDsBlock,
     GetDsBlockVerbose,
     GetLatestDsBlock,
@@ -26,6 +27,7 @@ pub enum RPCMethod {
     GetDsBlockRate,
     DsBlockListing,
     GetTxBlock,
+    GetTxBlockVerbose,
     GetLatestTxBlock,
     GetNumTxBlocks,
     GetTxBlockRate,
@@ -37,6 +39,7 @@ pub enum RPCMethod {
     GetPrevDifficulty,
     GetPrevDsDifficulty,
     GetTotalCoinSupply,
+    GetTotalCoinSupplyAsInt,
     GetMinerInfo,
     GetNumPeers,
 
@@ -76,6 +79,7 @@ impl fmt::Display for RPCMethod {
             Self::GetCurrentDsEpoch => write!(f, "GetCurrentDSEpoch"),
             Self::GetPrevDsDifficulty => write!(f, "GetPrevDSDifficulty"),
             Self::GetNumTxnsDsEpoch => write!(f, "GetNumTxnsDSEpoch"),
+            Self::GetCurrentDsComm => write!(f, "GetCurrentDSComm"),
             Self::GetContractAddressFromTransactionId => {
                 write!(f, "GetContractAddressFromTransactionID")
             }
@@ -351,6 +355,30 @@ pub struct TxBlock {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+pub struct TxBlockHeaderVerbose {
+    #[serde(flatten)]
+    pub header: TxBlockHeader,
+    #[serde(rename = "CommitteeHash")]
+    pub committee_hash: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct TxBlockBodyVerbose {
+    #[serde(flatten)]
+    pub body: TxBlockBody,
+    #[serde(rename = "B1")]
+    pub b1: Vec<bool>,
+    #[serde(rename = "B2")]
+    pub b2: Vec<bool>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct TxBlockVerbose {
+    pub body: TxBlockBody,
+    pub header: TxBlockHeader,
+}
+
+#[derive(Deserialize, Debug, Clone)]
 pub struct TxList {
     pub number: u32,
     #[serde(rename = "TxnHashes")]
@@ -508,4 +536,15 @@ pub struct SmartContracts(Vec<SmartContractAddress>);
 #[derive(Deserialize, Debug, Clone)]
 pub struct SmartContractAddress {
     pub address: ZilAddress,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct GetCurrentDsCommResponse {
+    #[serde(rename = "CurrentDSEpoch")]
+    pub current_ds_epoch: String,
+    #[serde(rename = "CurrentTxEpoch")]
+    pub current_tx_epoch: String,
+    #[serde(rename = "NumOfDSGuard")]
+    pub number_of_ds_guard: u16,
+    pub dscomm: Vec<String>,
 }

@@ -198,6 +198,10 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         Ok(self.send_request(GetBalance, rpc_params![address]).await?)
     }
 
+    async fn get_current_ds_comm(&self) -> Result<GetCurrentDsCommResponse, Error> {
+        Ok(self.send_request(GetCurrentDsComm, rpc_params![]).await?)
+    }
+
     async fn get_ds_block(&self, lock_num: &str) -> Result<DsBlock, Error> {
         Ok(self.send_request(GetDsBlock, rpc_params![lock_num]).await?)
     }
@@ -214,8 +218,12 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         Ok(self.send_request(GetTxBlock, rpc_params![block_num]).await?)
     }
 
+    async fn get_tx_block_verbose(&self, block_num: &str) -> Result<TxBlockVerbose, Error> {
+        Ok(self.send_request(GetTxBlockVerbose, rpc_params![block_num]).await?)
+    }
+
     async fn tx_block_listing(&self, max: u32) -> Result<BlockList, Error> {
-        Ok(self.send_request(GetTxBlock, rpc_params![max]).await?)
+        Ok(self.send_request(TxBlockListing, rpc_params![max]).await?)
     }
 
     async fn get_miner_info(&self, ds_block_number: &str) -> Result<MinerInfo, Error> {
@@ -288,6 +296,10 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
 
     async fn get_total_coin_supply(&self) -> Result<String, Error> {
         Ok(self.send_request(GetTotalCoinSupply, rpc_params![]).await?)
+    }
+
+    async fn get_total_coin_supply_as_int(&self) -> Result<u128, Error> {
+        Ok(self.send_request(GetTotalCoinSupplyAsInt, rpc_params![]).await?)
     }
 
     async fn get_recent_transactions(&self) -> Result<TxList, Error> {
