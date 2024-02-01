@@ -63,11 +63,14 @@ rpc_method_test!(GetBalance, "zil12mawdph2r00wys4q68jfsay2jy374lv6c3j5ek");
 rpc_method_test!(GetBlockchainInfo);
 rpc_method_test!(GetShardingStructure);
 rpc_method_test!(GetDsBlock, "1");
+rpc_method_test!(GetDsBlockVerbose, "9000");
 rpc_method_test!(GetLatestDsBlock);
+rpc_method_test!(GetNodeType);
 rpc_method_test!(GetNumDsBlocks);
 rpc_method_test!(GetDsBlockRate);
 rpc_method_test!(DsBlockListing, 1);
 rpc_method_test!(GetTxBlock, "1");
+rpc_method_test!(GetTxBlockVerbose, "1");
 rpc_method_test!(GetLatestTxBlock);
 rpc_method_test!(GetNumTxBlocks);
 rpc_method_test!(GetTxBlockRate);
@@ -77,8 +80,11 @@ rpc_method_test!(GetTransactionRate);
 rpc_method_test!(GetCurrentMiniEpoch);
 rpc_method_test!(GetCurrentDsEpoch);
 rpc_method_test!(GetPrevDifficulty);
+rpc_method_test!(GetNumPeers);
 rpc_method_test!(GetPrevDsDifficulty);
 rpc_method_test!(GetTotalCoinSupply);
+rpc_method_test!(GetTotalCoinSupplyAsInt);
+rpc_method_test!(GetCurrentDsComm);
 rpc_method_test!(GetMinerInfo, "5500");
 rpc_method_test!(GetRecentTransactions);
 rpc_method_test!(GetTransactionsForTxBlock, "3357911");
@@ -95,6 +101,11 @@ rpc_method_test!(
 
 rpc_method_test!(
     GetTransaction,
+    &TxHash::from_str("d95f28e4585220fb2f368cfa4ddcc0890b7ac0a90a3e8735ab29aeaf554f9f66").unwrap()
+);
+
+rpc_method_test!(
+    GetSoftConfirmedTransaction,
     &TxHash::from_str("d95f28e4585220fb2f368cfa4ddcc0890b7ac0a90a3e8735ab29aeaf554f9f66").unwrap()
 );
 

@@ -182,6 +182,12 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         Ok(self.send_request(GetTransaction, rpc_params![tx_hash.to_string()]).await?)
     }
 
+    async fn get_soft_confirmed_transaction(&self, tx_hash: &TxHash) -> Result<GetTransactionResponse, Error> {
+        Ok(self
+            .send_request(GetSoftConfirmedTransaction, rpc_params![tx_hash.to_string()])
+            .await?)
+    }
+
     async fn get_transaction_status(&self, tx_hash: &TxHash) -> Result<TransactionStatus, Error> {
         Ok(self
             .send_request(GetTransactionStatus, rpc_params![tx_hash.to_string()])
@@ -192,8 +198,16 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         Ok(self.send_request(GetBalance, rpc_params![address]).await?)
     }
 
+    async fn get_current_ds_comm(&self) -> Result<GetCurrentDsCommResponse, Error> {
+        Ok(self.send_request(GetCurrentDsComm, rpc_params![]).await?)
+    }
+
     async fn get_ds_block(&self, lock_num: &str) -> Result<DsBlock, Error> {
         Ok(self.send_request(GetDsBlock, rpc_params![lock_num]).await?)
+    }
+
+    async fn get_ds_block_verbose(&self, lock_num: &str) -> Result<DsBlockVerbose, Error> {
+        Ok(self.send_request(GetDsBlockVerbose, rpc_params![lock_num]).await?)
     }
 
     async fn ds_block_listing(&self, max: u32) -> Result<BlockList, Error> {
@@ -204,8 +218,12 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         Ok(self.send_request(GetTxBlock, rpc_params![block_num]).await?)
     }
 
+    async fn get_tx_block_verbose(&self, block_num: &str) -> Result<TxBlockVerbose, Error> {
+        Ok(self.send_request(GetTxBlockVerbose, rpc_params![block_num]).await?)
+    }
+
     async fn tx_block_listing(&self, max: u32) -> Result<BlockList, Error> {
-        Ok(self.send_request(GetTxBlock, rpc_params![max]).await?)
+        Ok(self.send_request(TxBlockListing, rpc_params![max]).await?)
     }
 
     async fn get_miner_info(&self, ds_block_number: &str) -> Result<MinerInfo, Error> {
@@ -214,6 +232,10 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
 
     async fn get_blockchain_info(&self) -> Result<BlockchainInfo, Error> {
         Ok(self.send_request(GetBlockchainInfo, rpc_params![]).await?)
+    }
+
+    async fn get_node_type(&self) -> Result<String, Error> {
+        Ok(self.send_request(GetNodeType, rpc_params![]).await?)
     }
 
     async fn get_sharding_structure(&self) -> Result<ShardingStructure, Error> {
@@ -264,12 +286,20 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         Ok(self.send_request(GetPrevDifficulty, rpc_params![]).await?)
     }
 
+    async fn get_num_peers(&self) -> Result<u32, Error> {
+        Ok(self.send_request(GetNumPeers, rpc_params![]).await?)
+    }
+
     async fn get_prev_ds_difficulty(&self) -> Result<u32, Error> {
         Ok(self.send_request(GetPrevDsDifficulty, rpc_params![]).await?)
     }
 
     async fn get_total_coin_supply(&self) -> Result<String, Error> {
         Ok(self.send_request(GetTotalCoinSupply, rpc_params![]).await?)
+    }
+
+    async fn get_total_coin_supply_as_int(&self) -> Result<u128, Error> {
+        Ok(self.send_request(GetTotalCoinSupplyAsInt, rpc_params![]).await?)
     }
 
     async fn get_recent_transactions(&self) -> Result<TxList, Error> {
