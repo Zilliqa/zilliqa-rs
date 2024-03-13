@@ -31,7 +31,10 @@ async fn deploy_contract_without_constructor_parameter(ctx: &TestContext) -> Res
 
     let init = Init(vec![ScillaVariable::new_from_str("_scilla_version", "Uint32", "0")]);
 
-    let contract = factory.deploy_from_file(&ctx.timestamp_contract(), init, None).await.unwrap();
+    let contract = factory
+        .deploy_from_file(&ctx.timestamp_contract(), init, None, false)
+        .await
+        .unwrap();
 
     println!("addr: {:?}", contract);
     Ok(())
@@ -49,7 +52,7 @@ async fn deploy_contract_with_constructor_parameter(ctx: &TestContext) -> Result
     ]);
 
     let contract = factory
-        .deploy_from_file(&ctx.hello_world_contract(), init, None)
+        .deploy_from_file(&ctx.hello_world_contract(), init, None, false)
         .await
         .unwrap();
 
@@ -86,7 +89,7 @@ async fn call_a_param_less_transition(ctx: &TestContext) -> Result<()> {
     ]);
 
     let contract = factory
-        .deploy_from_file(&ctx.hello_world_contract(), init, None)
+        .deploy_from_file(&ctx.hello_world_contract(), init, None, false)
         .await
         .unwrap();
 
@@ -109,7 +112,7 @@ async fn call_transition_with_single_string_param(ctx: &TestContext) -> Result<(
     ]);
 
     let contract = factory
-        .deploy_from_file(&ctx.hello_world_contract(), init, None)
+        .deploy_from_file(&ctx.hello_world_contract(), init, None, false)
         .await
         .unwrap();
 
@@ -138,7 +141,7 @@ async fn call_a_param_less_transition_though_the_rust_binding(ctx: &TestContext)
     ]);
 
     let contract = factory
-        .deploy_from_file(&ctx.hello_world_contract(), init, None)
+        .deploy_from_file(&ctx.hello_world_contract(), init, None, false)
         .await
         .unwrap();
 

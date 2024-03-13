@@ -1,5 +1,7 @@
 use std::{path::Path, sync::Arc};
 
+use regex::Regex;
+
 use crate::{
     core::parse_zil,
     core::{DeployContractResponse, ZilAddress},
@@ -32,6 +34,7 @@ impl<T: Middleware> Factory<T> {
     /// * `overridden_params`: `overridden_params` is an optional parameter of type `TransactionParams`. It
     /// allows you to override the default transaction parameters when deploying the contract. If you don't
     /// want to override any parameters, you can pass `None` as the value for this parameter.
+    /// * `do_contract_compression`: Set it to true if you want your contract gets compressed before deployment.
     ///
     /// Returns:
     ///
@@ -58,7 +61,7 @@ impl<T: Middleware> Factory<T> {
     ///
     ///     let factory = ContractFactory::new(provider.into());
     ///     let init = Init(vec![ScillaVariable::new_from_str("_scilla_version", "Uint32", "0")]);
-    ///     let contract = factory.deploy_from_file(&PathBuf::from("./tests/contracts/Timestamp.scilla"), init, None).await?;
+    ///     let contract = factory.deploy_from_file(&PathBuf::from("./tests/contracts/Timestamp.scilla"), init, None, false).await?;
     ///     println!("addr: {:?}", contract);
     ///     Ok(())
     /// }
@@ -68,8 +71,16 @@ impl<T: Middleware> Factory<T> {
         path: &Path,
         init: Init,
         overridden_params: Option<TransactionParams>,
+        do_contract_compression: bool,
     ) -> Result<BaseContract<T>, Error> {
-        let contract_code = std::fs::read_to_string(path)?;
+        let contract_code = {
+            let code = std::fs::read_to_string(path)?;
+            if do_contract_compression {
+                compress_contract(&code)?
+            } else {
+                code
+            }
+        };
         self.deploy_str(contract_code, init, overridden_params).await
     }
 
@@ -140,3 +151,85 @@ impl<T: Middleware> Factory<T> {
         })
     }
 }
+
+fn compress_contract(code: &str) -> Result<String, Error> {
+    let remove_comments_regex = Regex::new(r"\(\*.*?\*\)")?;
+    let replace_whitespace_regex = Regex::new(r"(?m)(^[ \t]*\r?\n)|([ \t]+$)")?;
+    let code = remove_comments_regex.replace_all(code, "");
+    let code = replace_whitespace_regex.replace_all(&code, "").to_string();
+    Ok(code)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::contract::factory::compress_contract;
+
+    #[test]
+    fn compression_1_works() {
+        let code = r#"(***************************************************)
+(*             The contract definition             *)
+(***************************************************)
+contract HelloWorld
+(owner: ByStr20)"#;
+        let compressed = compress_contract(code).unwrap();
+        assert_eq!(
+            &compressed,
+            r#"contract HelloWorld
+(owner: ByStr20)"#
+        );
+    }
+
+    #[test]
+    fn compression_2_works() {
+        let code = r#"(*something*)contract HelloWorld
+(owner: ByStr20)"#;
+        let compressed = compress_contract(code).unwrap();
+        assert_eq!(
+            &compressed,
+            r#"contract HelloWorld
+(owner: ByStr20)"#
+        );
+    }
+
+    #[test]
+    fn compression_3_works() {
+        let code = r#"contract HelloWorld (* a dummy comment*)
+(owner: ByStr20)"#;
+        let compressed = compress_contract(code).unwrap();
+        assert_eq!(
+            &compressed,
+            r#"contract HelloWorld
+(owner: ByStr20)"#
+        );
+    }
+
+    #[test]
+    fn compression_4_works() {
+        let code = r#"contract WithComment          (*contract name*)
+()
+(*fields*)
+field welcome_msg : String = "" (*welcome*) (*another comment*)  "#;
+        let compressed = compress_contract(code).unwrap();
+        assert_eq!(
+            &compressed,
+            r#"contract WithComment
+()
+field welcome_msg : String = """#
+        );
+    }
+}
+
+/*
+
+  it("#4", async function () {
+    const code = `contract WithComment          (*contract name*)
+()
+(*fields*)
+field welcome_msg : String = "" (*welcome*) (*another comment*)  `;
+    const compressed = compressContract(code);
+    expect(compressed).to.be.eq(`contract WithComment
+()
+field welcome_msg : String = ""`);
+  });
+});
+ */
