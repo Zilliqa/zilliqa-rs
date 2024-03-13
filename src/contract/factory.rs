@@ -1,7 +1,5 @@
 use std::{path::Path, sync::Arc};
 
-use regex::Regex;
-
 use crate::{
     core::parse_zil,
     core::{DeployContractResponse, ZilAddress},
@@ -10,7 +8,7 @@ use crate::{
     Error,
 };
 
-use super::{BaseContract, Init};
+use super::{compress_contract, BaseContract, Init};
 
 pub struct Factory<T: Middleware> {
     client: Arc<T>,
@@ -151,85 +149,3 @@ impl<T: Middleware> Factory<T> {
         })
     }
 }
-
-fn compress_contract(code: &str) -> Result<String, Error> {
-    let remove_comments_regex = Regex::new(r"\(\*.*?\*\)")?;
-    let replace_whitespace_regex = Regex::new(r"(?m)(^[ \t]*\r?\n)|([ \t]+$)")?;
-    let code = remove_comments_regex.replace_all(code, "");
-    let code = replace_whitespace_regex.replace_all(&code, "").to_string();
-    Ok(code)
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::contract::factory::compress_contract;
-
-    #[test]
-    fn compression_1_works() {
-        let code = r#"(***************************************************)
-(*             The contract definition             *)
-(***************************************************)
-contract HelloWorld
-(owner: ByStr20)"#;
-        let compressed = compress_contract(code).unwrap();
-        assert_eq!(
-            &compressed,
-            r#"contract HelloWorld
-(owner: ByStr20)"#
-        );
-    }
-
-    #[test]
-    fn compression_2_works() {
-        let code = r#"(*something*)contract HelloWorld
-(owner: ByStr20)"#;
-        let compressed = compress_contract(code).unwrap();
-        assert_eq!(
-            &compressed,
-            r#"contract HelloWorld
-(owner: ByStr20)"#
-        );
-    }
-
-    #[test]
-    fn compression_3_works() {
-        let code = r#"contract HelloWorld (* a dummy comment*)
-(owner: ByStr20)"#;
-        let compressed = compress_contract(code).unwrap();
-        assert_eq!(
-            &compressed,
-            r#"contract HelloWorld
-(owner: ByStr20)"#
-        );
-    }
-
-    #[test]
-    fn compression_4_works() {
-        let code = r#"contract WithComment          (*contract name*)
-()
-(*fields*)
-field welcome_msg : String = "" (*welcome*) (*another comment*)  "#;
-        let compressed = compress_contract(code).unwrap();
-        assert_eq!(
-            &compressed,
-            r#"contract WithComment
-()
-field welcome_msg : String = """#
-        );
-    }
-}
-
-/*
-
-  it("#4", async function () {
-    const code = `contract WithComment          (*contract name*)
-()
-(*fields*)
-field welcome_msg : String = "" (*welcome*) (*another comment*)  `;
-    const compressed = compressContract(code);
-    expect(compressed).to.be.eq(`contract WithComment
-()
-field welcome_msg : String = ""`);
-  });
-});
- */
