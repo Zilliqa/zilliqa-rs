@@ -8,7 +8,7 @@ use crate::{
     Error,
 };
 
-use super::{BaseContract, Init};
+use super::{compress_contract, BaseContract, Init};
 
 pub struct Factory<T: Middleware> {
     client: Arc<T>,
@@ -32,6 +32,7 @@ impl<T: Middleware> Factory<T> {
     /// * `overridden_params`: `overridden_params` is an optional parameter of type `TransactionParams`. It
     /// allows you to override the default transaction parameters when deploying the contract. If you don't
     /// want to override any parameters, you can pass `None` as the value for this parameter.
+    /// * `do_contract_compression`: Set it to true if you want your contract gets compressed before deployment.
     ///
     /// Returns:
     ///
@@ -58,7 +59,7 @@ impl<T: Middleware> Factory<T> {
     ///
     ///     let factory = ContractFactory::new(provider.into());
     ///     let init = Init(vec![ScillaVariable::new_from_str("_scilla_version", "Uint32", "0")]);
-    ///     let contract = factory.deploy_from_file(&PathBuf::from("./tests/contracts/Timestamp.scilla"), init, None).await?;
+    ///     let contract = factory.deploy_from_file(&PathBuf::from("./tests/contracts/Timestamp.scilla"), init, None, false).await?;
     ///     println!("addr: {:?}", contract);
     ///     Ok(())
     /// }
@@ -68,8 +69,16 @@ impl<T: Middleware> Factory<T> {
         path: &Path,
         init: Init,
         overridden_params: Option<TransactionParams>,
+        do_contract_compression: bool,
     ) -> Result<BaseContract<T>, Error> {
-        let contract_code = std::fs::read_to_string(path)?;
+        let contract_code = {
+            let code = std::fs::read_to_string(path)?;
+            if do_contract_compression {
+                compress_contract(&code)?
+            } else {
+                code
+            }
+        };
         self.deploy_str(contract_code, init, overridden_params).await
     }
 

@@ -85,4 +85,7 @@ pub enum Error {
 
     #[error(transparent)]
     KeystoreError(#[from] eth_keystore::KeystoreError),
+
+    #[error(transparent)]
+    RegexError(#[from] regex::Error),
 }

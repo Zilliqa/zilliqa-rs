@@ -202,7 +202,17 @@ impl<T: Middleware> {contract_name}<T> {{
             {contract_deployment_params_for_init}
         ]);
 
-        Ok(Self::new(factory.deploy_from_file(&std::path::PathBuf::from({contract_path:?}), init, None).await?))
+        Ok(Self::new(factory.deploy_from_file(&std::path::PathBuf::from({contract_path:?}), init, None, false).await?))
+    }}
+
+    pub async fn deploy_compressed(client: Arc<T> {contract_deployment_params}) -> Result<Self, Error> {{
+        let factory = ContractFactory::new(client.clone());
+        let init = Init(vec![
+            ScillaVariable::new("_scilla_version".to_string(), "Uint32".to_string(), "0".to_value()),
+            {contract_deployment_params_for_init}
+        ]);
+
+        Ok(Self::new(factory.deploy_from_file(&std::path::PathBuf::from({contract_path:?}), init, None, true).await?))
     }}
 
     pub fn address(&self) -> &ZilAddress  {{

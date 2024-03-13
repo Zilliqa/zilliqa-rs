@@ -151,6 +151,8 @@ Ok(BalanceResponse { nonce: 138, balance: 899999994124734000000000 })
 Contract address: ZilAddress("0xC50C93831F6eAB4e4F011076dca6e887288cc872")
 ```
 
+Instead of `deploy`, you can use `deploy_compressed` if you like to deploy a compressed version of the contract.
+
 ### Getting contract states
 Our contract has `owner`, an immutable state, and `welcome_msg`, a mutable one. We can get these states by calling the corresponding functions:
 ```rust,ignore
