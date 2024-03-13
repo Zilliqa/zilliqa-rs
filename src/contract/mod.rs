@@ -111,6 +111,8 @@ async fn main() -> anyhow::Result<()> {
 }
 ```
 
+Instead of `deploy`, you can use `deploy_compressed` if you like to deploy a compressed version of the contract.
+
 Alternatively, If the contract is already deployed and you have its address, it's possible to create a new instance of the target contract by calling `attach` function:
 ```
 use std::sync::Arc;
