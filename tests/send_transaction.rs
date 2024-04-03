@@ -120,3 +120,31 @@ async fn get_transaction_receipt() -> Result<()> {
 
     Ok(())
 }
+
+#[tokio::test]
+async fn send_zil_with_empty_data_code() -> Result<()> {
+    const END_POINT: &str = "https://zilliqa-isolated-server.zilliqa.com/";
+
+    let wallet = "d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".parse::<LocalWallet>()?;
+
+    let provider = Provider::<Http>::try_from(END_POINT)?
+        .with_chain_id(222)
+        .with_signer(wallet.clone());
+
+    let receiver = LocalWallet::create_random()?;
+
+    let tx = TransactionBuilder::default()
+        .data("".to_string())
+        .code("".to_string())
+        .pay(parse_zil("0.1")?, receiver.address.clone())
+        .build();
+
+    provider
+        .send_transaction_without_confirm::<CreateTransactionResponse>(tx)
+        .await?;
+
+    let res = provider.get_balance(&receiver.address).await?;
+
+    assert_eq!(res.balance, parse_zil("0.1")?);
+    Ok(())
+}

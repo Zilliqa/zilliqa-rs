@@ -125,8 +125,14 @@ impl CreateTransactionRequest {
             gaslimit: self.gas_limit,
             oneof2: Some(proto::Nonce::Nonce(self.nonce)),
             //TODO: Remove clones
-            oneof8: self.code.clone().map(|code| proto::Code::Code(code.as_bytes().to_vec())),
-            oneof9: self.data.clone().map(|data| proto::Data::Data(data.as_bytes().to_vec())),
+            oneof8: match &self.code {
+                Some(code) if code.len() > 0 => Some(proto::Code::Code(code.as_bytes().to_vec())),
+                _ => None,
+            },
+            oneof9: match &self.data {
+                Some(data) if data.len() > 0 => Some(proto::Data::Data(data.as_bytes().to_vec())),
+                _ => None,
+            },
         };
         proto.encode_to_vec()
     }
