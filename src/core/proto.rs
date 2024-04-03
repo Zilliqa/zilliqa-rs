@@ -43,11 +43,13 @@ pub enum Nonce {
     #[prost(uint64, tag = "2")]
     Nonce(u64),
 }
+
 #[derive(Clone, PartialEq, prost::Oneof)]
 pub enum Code {
     #[prost(bytes, tag = "8")]
     Code(Vec<u8>),
 }
+
 #[derive(Clone, PartialEq, prost::Oneof)]
 pub enum Data {
     #[prost(bytes, tag = "9")]

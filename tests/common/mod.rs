@@ -14,11 +14,11 @@ pub struct TestContext {
 impl AsyncTestContext for TestContext {
     async fn setup() -> Self {
         let endpoint = env::var("ZILLIQA_ENDPOINT")
-            .unwrap_or("http://localhost:5555".into())
+            .unwrap_or("https://zilliqa-isolated-server.zilliqa.com".into())
             .parse()
             .unwrap();
         let wallet = LocalWallet::from_str(
-            &env::var("TEST_WALLET").unwrap_or("e53d1c3edaffc7a7bab5418eb836cf75819a82872b4a1a0f1c7fcf5c3e020b89".to_string()),
+            &env::var("TEST_WALLET").unwrap_or("d96e9eb5b782a80ea153c937fa83e5948485fbfc8b7e7c069d7b914dbc350aba".to_string()),
         )
         .unwrap();
 
