@@ -6,6 +6,7 @@ pub mod types;
 pub mod units;
 
 use bech32::{FromBase32, ToBase32, Variant};
+use primitive_types::H160;
 pub use types::*;
 pub use units::*;
 
@@ -260,7 +261,7 @@ impl ZilAddress {
 
     fn to_checksum_address(address: &str) -> Result<String, Error> {
         let address = address.replace("0x", "");
-        if !ZilAddress::is_address(&address) {
+        if !Self::is_address(&address) {
             return Err(Error::InvalidAddress(address.to_string()));
         }
 
@@ -332,6 +333,14 @@ impl FromStr for ZilAddress {
         } else {
             Err(Error::InvalidAddress(addr.to_string()))
         }
+    }
+}
+
+impl TryFrom<H160> for ZilAddress {
+    type Error = Error;
+
+    fn try_from(value: H160) -> Result<Self, Self::Error> {
+        Self::from_str(&hex::encode(value))
     }
 }
 
