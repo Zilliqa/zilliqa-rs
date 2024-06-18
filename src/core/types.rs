@@ -1,6 +1,6 @@
 //! JSON-RPC related data types.
 
-use std::fmt;
+use std::{collections::BTreeMap, fmt};
 
 use primitive_types::H160;
 use prost::Message;
@@ -433,7 +433,7 @@ pub struct TransactionReceipt {
     pub exceptions: Option<Vec<ExceptionEntry>>,
     pub success: bool,
     pub transitions: Option<Vec<TransitionEntry>>,
-    pub errors: Option<String>,
+    pub errors: Option<BTreeMap<u64, Vec<u64>>>,
 }
 
 impl TransactionReceipt {
@@ -537,7 +537,7 @@ pub struct SmartContractCode {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct SmartContracts(Vec<SmartContractAddress>);
+pub struct SmartContracts(pub Vec<SmartContractAddress>);
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct SmartContractAddress {
