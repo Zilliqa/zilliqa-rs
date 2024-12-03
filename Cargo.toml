@@ -15,6 +15,7 @@ path = "src/lib.rs"
 anyhow = "1.0.79"
 convert_case = "0.6.0"
 scilla-parser = "1.0.0"
+build-print = "0.1.1"
 
 [dependencies]
 anyhow = "1.0.79"
