@@ -6,7 +6,6 @@ use scilla_parser::FieldList;
 use scilla_parser::Transition;
 use std::env;
 use std::error::Error;
-use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
@@ -31,10 +30,10 @@ fn scilla_type_to_rust(scilla_type: &scilla_parser::Type) -> String {
         scilla_parser::Type::ByStr(x) if *x == 20 => "ZilAddress".to_string(),
         scilla_parser::Type::ByStr(_) => "String".to_string(),
         scilla_parser::Type::Other(_) => {
-            add_to_log(&format!(
-                "Failed to map {:?} to any rust type. `ScillaVariable` is used instead.",
+            build_print::warn!(
+                "Build.rs: Failed to map {:?} to any rust type. `ScillaVariable` is used instead.",
                 scilla_type
-            ));
+            );
             "ScillaVariable".to_string()
         }
         scilla_parser::Type::Bool => "bool".to_string(),
@@ -242,11 +241,6 @@ pub struct {contract_name}Init {{{contract_init_fields_for_init_struct}
     ))
 }
 
-fn add_to_log(log: &str) {
-    let mut file = OpenOptions::new().append(true).create(true).open("/tmp/log.txt").unwrap();
-    writeln!(file, "{}", log).unwrap();
-}
-
 fn generate(contracts_path: &Path) -> Result<()> {
     let out_dir = env::var_os("OUT_DIR").context("Failed to get OUT_DIR")?;
     let dest_path = Path::new(&out_dir).join("scilla_contracts.rs");
@@ -260,12 +254,12 @@ fn generate(contracts_path: &Path) -> Result<()> {
                 Ok(contract) => match generate_rust_binding(&contract, &path) {
                     Ok(code) => writeln!(file, "{code}").unwrap(),
                     Err(e) => {
-                        add_to_log(&format!("Failed to generate rust binding for {path:?}. {e}"));
+                        build_print::error!("Failed to generate rust binding for {path:?}. {e}");
                         continue;
                     }
                 },
                 Err(e) => {
-                    add_to_log(&format!("Failed to parse {path:?}. {e}",));
+                    build_print::error!("Failed to parse {path:?} contract. {e} to generate rust binding for it.",);
                     continue;
                 }
             }
@@ -283,24 +277,25 @@ fn generate_empty() -> Result<()> {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    add_to_log("Start...");
     let contracts_path = env::var("CONTRACTS_PATH").unwrap_or_default();
     if contracts_path.is_empty() {
-        add_to_log("CONTRACTS_PATH is not set. Exiting...");
+        build_print::info!(
+            "Build.rs: CONTRACTS_PATH is not set. It's mandatory if you need to generate rust bindings for your contracts."
+        );
         generate_empty()?;
         return Ok(());
     }
 
-    add_to_log(&format!("Contract path: {}", contracts_path));
+    build_print::info!("Build.rs: Contract path is set to: {}", contracts_path);
     let contracts_path = PathBuf::from(contracts_path);
     if !contracts_path.exists() {
-        add_to_log(&format!("{} does not exist. Exiting...", contracts_path.display()));
+        build_print::warn!("Build.rs: {} does not exist. Exiting...", contracts_path.display());
         generate_empty()?;
         return Ok(());
     }
 
     if let Err(x) = generate(&contracts_path) {
-        add_to_log(&x.to_string())
+        build_print::error!("Build.rs: Failed to generate rust bindings. {}", &x.to_string())
     }
 
     println!("cargo:rerun-if-changed=build.rs");
